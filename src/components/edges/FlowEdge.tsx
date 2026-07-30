@@ -29,7 +29,7 @@ export default function FlowEdge(props: EdgeProps) {
     labelY = sourceY - 88
   } else if (kind === 'back') {
     // 反向边沿分组下方回勾，泳道避免多条回勾线重叠
-    const dip = Math.max(sourceY, targetY) + 56 + lane * 26
+    const dip = Math.max(sourceY, targetY) + 56 + lane * 32
     path = `M ${sourceX} ${sourceY} C ${sourceX} ${dip}, ${targetX} ${dip}, ${targetX} ${targetY}`
     labelX = (sourceX + targetX) / 2
     labelY = dip - 16
@@ -38,7 +38,7 @@ export default function FlowEdge(props: EdgeProps) {
     const r = 8
     const upX = sourceX + 8 + srcShift
     const downX = targetX - 8 - tgtShift
-    const topY = -84 - lane * 30
+    const topY = -84 - lane * 36
     path = [
       `M ${sourceX} ${sourceY}`,
       `L ${upX - r} ${sourceY}`,
