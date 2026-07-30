@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812">
+<rect width="375" height="812" fill="#ffffff"/>
+<rect x="0.5" y="0.5" width="374" height="811" fill="none" stroke="#e5e7eb"/>
+<rect x="93.8" y="65.0" width="187.5" height="97.4" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="118.0" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">结果反馈</text>
+<rect x="22.5" y="194.9" width="330.0" height="146.2" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="272.3" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">分期信息摘要</text>
+<rect x="22.5" y="714.6" width="330.0" height="56.8" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="747.3" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">主操作按钮</text>
+<text x="187.5" y="796" text-anchor="middle" font-size="12" fill="#c0c4cc" font-family="-apple-system,'PingFang SC',sans-serif">分期成功（已还清） · 默认 · 占位图</text>
+</svg>

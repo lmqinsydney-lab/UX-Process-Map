@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812">
+<rect width="375" height="812" fill="#ffffff"/>
+<rect x="0.5" y="0.5" width="374" height="811" fill="none" stroke="#e5e7eb"/>
+<rect x="7.5" y="8.1" width="360.0" height="40.6" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="32.8" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">导航栏</text>
+<rect x="22.5" y="65.0" width="330.0" height="81.2" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="109.9" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">还款文案</text>
+<rect x="22.5" y="154.3" width="330.0" height="56.8" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="187.0" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">差异化利率</text>
+<rect x="22.5" y="227.4" width="330.0" height="162.4" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="312.9" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">还款计划</text>
+<rect x="22.5" y="714.6" width="330.0" height="56.8" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="747.3" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">提交按钮</text>
+<text x="187.5" y="796" text-anchor="middle" font-size="12" fill="#c0c4cc" font-family="-apple-system,'PingFang SC',sans-serif">线上页面 · 线上现状 · 占位图</text>
+</svg>
