@@ -16,7 +16,7 @@ interface PageCardData {
 
 const SW = 150
 const SG = 14
-const STH = 254
+const STH = 352
 
 function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[] }) {
   const idx = (stateId?: string) => page.states.findIndex((s) => s.id === stateId)
@@ -50,7 +50,7 @@ function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[
           if (j === i + 1) {
             const x1 = 12 + i * (SW + SG) + SW
             const x2 = 12 + j * (SW + SG)
-            const y = 40 + ((k % 3) - 1) * 26
+            const y = 176 + ((k % 3) - 1) * 26
             return (
               <g key={e.id}>
                 <line x1={x1} y1={y} x2={x2 - 2} y2={y} stroke={color} strokeWidth={1.6} strokeDasharray={dash} markerEnd={`url(#tray-arrow-${e.type})`} />

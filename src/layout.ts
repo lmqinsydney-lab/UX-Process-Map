@@ -4,7 +4,7 @@ import { canvasEdges, endpointLabel, project, stateEdgesOf } from './data/loader
 import type { EdgeType } from './types/model'
 
 export const CARD_W = 190
-export const CARD_H = 358
+export const CARD_H = 422
 const GROUP_PAD_X = 24
 const GROUP_PAD_TOP = 58
 const GROUP_PAD_BOTTOM = 30
@@ -27,7 +27,7 @@ export interface FocusState {
 }
 
 /** 聚焦时页面卡片展开完整截图后的近似高度（用于视口计算） */
-export const FOCUS_CARD_H = 452
+export const FOCUS_CARD_H = 462
 export const PANEL_W = 380
 
 export interface GraphCallbacks {
@@ -44,6 +44,7 @@ export function buildGraph(
   cb: GraphCallbacks,
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
+  const pagePos = new Map<string, { left: number; right: number }>()
   let cursorX = 0
 
   for (const pn of project.processNodes) {
@@ -64,6 +65,8 @@ export function buildGraph(
     })
 
     pages.forEach((page, i) => {
+      const left = cursorX + GROUP_PAD_X + i * (CARD_W + CARD_GAP)
+      pagePos.set(page.id, { left, right: left + CARD_W })
       nodes.push({
         id: page.id,
         type: 'pageCard',
@@ -90,31 +93,78 @@ export function buildGraph(
     cursorX += width + GROUP_GAP
   }
 
-  const targetSeen = new Map<string, number>()
-  const sourceSeen = new Map<string, number>()
-  const edges: Edge[] = canvasEdges().map((e) => {
-    const selfLoop = e.from.pageId === e.to.pageId
-    const isBack = e.type === 'back'
-    const seen = targetSeen.get(e.to.pageId) ?? 0
-    targetSeen.set(e.to.pageId, seen + 1)
-    const srcSeen = sourceSeen.get(e.from.pageId) ?? 0
-    sourceSeen.set(e.from.pageId, srcSeen + 1)
+  const all = canvasEdges()
+
+  const kindOf = (e: (typeof all)[number]): 'loop' | 'back' | 'long' | 'short' => {
+    if (e.from.pageId === e.to.pageId) return 'loop'
+    if (e.type === 'back') return 'back'
+    const gap = pagePos.get(e.to.pageId)!.left - pagePos.get(e.from.pageId)!.right
+    return gap > 220 ? 'long' : 'short'
+  }
+
+  /** 区间图着色：水平区间重叠的连线分配到不同泳道，互不交叠 */
+  const assignLanes = (items: { id: string; start: number; end: number }[], margin: number) => {
+    const laneEnds: number[] = []
+    const out: Record<string, number> = {}
+    for (const it of [...items].sort((a, b) => a.start - b.start)) {
+      let lane = laneEnds.findIndex((end) => end + margin <= it.start)
+      if (lane === -1) {
+        lane = laneEnds.length
+        laneEnds.push(it.end)
+      } else {
+        laneEnds[lane] = it.end
+      }
+      out[it.id] = lane
+    }
+    return out
+  }
+
+  const longLanes = assignLanes(
+    all
+      .filter((e) => kindOf(e) === 'long')
+      .map((e) => ({ id: e.id, start: pagePos.get(e.from.pageId)!.right, end: pagePos.get(e.to.pageId)!.left })),
+    40,
+  )
+  const backLanes = assignLanes(
+    all
+      .filter((e) => kindOf(e) === 'back')
+      .map((e) => {
+        const a = pagePos.get(e.from.pageId)!
+        const b = pagePos.get(e.to.pageId)!
+        return { id: e.id, start: Math.min(a.left, b.left), end: Math.max(a.right, b.right) }
+      }),
+    40,
+  )
+
+  const srcSeen = new Map<string, number>()
+  const tgtSeen = new Map<string, number>()
+  const edges: Edge[] = all.map((e) => {
+    const kind = kindOf(e)
+    let srcShift = 0
+    let tgtShift = 0
+    if (kind === 'long') {
+      srcShift = (srcSeen.get(e.from.pageId) ?? 0) * 10
+      srcSeen.set(e.from.pageId, (srcSeen.get(e.from.pageId) ?? 0) + 1)
+      tgtShift = (tgtSeen.get(e.to.pageId) ?? 0) * 10
+      tgtSeen.set(e.to.pageId, (tgtSeen.get(e.to.pageId) ?? 0) + 1)
+    }
     return {
       id: e.id,
       source: e.from.pageId,
       target: e.to.pageId,
       type: 'flow',
-      sourceHandle: selfLoop ? 'ts' : isBack ? 'bs' : 'r',
-      targetHandle: selfLoop ? 'tt' : isBack ? 'bt' : 'l',
+      sourceHandle: kind === 'loop' ? 'ts' : kind === 'back' ? 'bs' : 'r',
+      targetHandle: kind === 'loop' ? 'tt' : kind === 'back' ? 'bt' : 'l',
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: EDGE_COLOR[e.type] },
       data: {
         edge: e,
+        kind,
+        lane: kind === 'long' ? longLanes[e.id] : kind === 'back' ? backLanes[e.id] : 0,
+        srcShift,
+        tgtShift,
         open: openEdgeId === e.id,
         fromLabel: endpointLabel(e.from),
         toLabel: endpointLabel(e.to),
-        labelShift: seen * 26,
-        srcShift: srcSeen * 10,
-        tgtShift: seen * 10,
         onOpenEdge: cb.onOpenEdge,
       },
     }

@@ -52,8 +52,7 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .page-thumb-box {
-  height: 280px; border-radius: 8px; overflow: hidden; background: #fafafa; border: 1px solid #f0f1f4;
-  display: flex; align-items: flex-start; justify-content: center;
+  border-radius: 8px; overflow: hidden; background: #fafafa; border: 1px solid #f0f1f4;
 }
 .page-thumb { width: 100%; display: block; }
 .state-badge {

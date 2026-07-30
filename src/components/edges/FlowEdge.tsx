@@ -5,40 +5,40 @@ import { EDGE_TYPE_NAME, type FlowEdgeData } from '../../types/model'
 
 interface FlowEdgeDataProps {
   edge: FlowEdgeData
+  kind: 'loop' | 'back' | 'long' | 'short'
+  lane: number
+  srcShift: number
+  tgtShift: number
   open: boolean
   fromLabel: string
   toLabel: string
-  labelShift: number
-  srcShift: number
-  tgtShift: number
   onOpenEdge: (edgeId: string | null) => void
 }
 
 export default function FlowEdge(props: EdgeProps) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd } = props
-  const { edge, open, fromLabel, toLabel, labelShift, srcShift, tgtShift, onOpenEdge } = props.data as unknown as FlowEdgeDataProps
+  const { edge, kind, lane, srcShift, tgtShift, open, fromLabel, toLabel, onOpenEdge } = props.data as unknown as FlowEdgeDataProps
 
-  const selfLoop = edge.from.pageId === edge.to.pageId
-  const dx = targetX - sourceX
   let path: string
   let labelX: number
   let labelY: number
 
-  if (selfLoop) {
+  if (kind === 'loop') {
     path = `M ${sourceX} ${sourceY} C ${sourceX - 95} ${sourceY - 115}, ${sourceX + 95} ${sourceY - 115}, ${targetX} ${targetY}`
     labelX = sourceX
     labelY = sourceY - 88
-  } else if (edge.type === 'back') {
-    const dip = Math.max(sourceY, targetY) + 74 + labelShift
+  } else if (kind === 'back') {
+    // 反向边沿分组下方回勾，泳道避免多条回勾线重叠
+    const dip = Math.max(sourceY, targetY) + 56 + lane * 26
     path = `M ${sourceX} ${sourceY} C ${sourceX} ${dip}, ${targetX} ${dip}, ${targetX} ${targetY}`
     labelX = (sourceX + targetX) / 2
     labelY = dip - 16
-  } else if (dx > 220) {
-    // 长距离连线走正交路径：从卡片间隙垂直上升，顶部通道横穿，目标间隙垂直下降
+  } else if (kind === 'long') {
+    // 长距离连线走正交路径：卡片间隙垂直上升 → 顶部专属泳道横穿 → 目标间隙垂直下降
     const r = 8
     const upX = sourceX + 8 + srcShift
     const downX = targetX - 8 - tgtShift
-    const topY = -84 - labelShift
+    const topY = -84 - lane * 30
     path = [
       `M ${sourceX} ${sourceY}`,
       `L ${upX - r} ${sourceY}`,
@@ -55,7 +55,6 @@ export default function FlowEdge(props: EdgeProps) {
     labelY = topY
   } else {
     ;[path, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
-    labelY += labelShift
   }
 
   const color = EDGE_COLOR[edge.type]
