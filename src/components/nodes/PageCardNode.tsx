@@ -1,4 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { asset } from '../../assetUrl'
 import { getModule } from '../../data/loader'
 import { EDGE_COLOR } from '../../layout'
 import type { FlowEdgeData, Page } from '../../types/model'
@@ -29,7 +30,7 @@ function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[
             <div className="state-card-name" title={s.name}>
               {s.name}
             </div>
-            <img src={'/' + s.image} draggable={false} alt={s.name} />
+            <img src={asset(s.image)} draggable={false} alt={s.name} />
           </div>
         ))}
       </div>
@@ -107,7 +108,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
           onSelectModule(null)
         }}
       >
-        <img src={'/' + state.image} alt={`${page.name} · ${state.name}`} draggable={false} />
+        <img src={asset(state.image)} alt={`${page.name} · ${state.name}`} draggable={false} />
         {hz && (
           <>
             <div className="mask" style={{ left: 0, top: 0, width: '100%', height: `${hz.y}%` }} />
@@ -159,7 +160,7 @@ export default function PageCardNode(props: NodeProps) {
         ) : (
           <>
             <div className="page-thumb-box">
-              <img className="page-thumb" src={'/' + page.states[0].image} draggable={false} alt={page.name} />
+              <img className="page-thumb" src={asset(page.states[0].image)} draggable={false} alt={page.name} />
             </div>
             <button
               className={`state-badge${expanded ? ' on' : ''}`}
