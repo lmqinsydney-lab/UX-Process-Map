@@ -1,4 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { getModule } from '../../data/loader'
 import { EDGE_COLOR } from '../../layout'
 import type { FlowEdgeData, Page } from '../../types/model'
 
@@ -6,15 +7,18 @@ interface PageCardData {
   page: Page
   expanded: boolean
   stateEdges: FlowEdgeData[]
-  onOpen: (pageId: string) => void
+  isFocused: boolean
+  focusStateId: string | null
+  focusModuleId: string | null
   onToggle: (pageId: string) => void
+  onSelectModule: (moduleId: string | null) => void
 }
 
 const SW = 150
 const SG = 14
 const STH = 254
 
-function StateTray({ page, stateEdges, onOpen }: { page: Page; stateEdges: FlowEdgeData[]; onOpen: (id: string) => void }) {
+function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[] }) {
   const idx = (stateId?: string) => page.states.findIndex((s) => s.id === stateId)
   const trayW = page.states.length * (SW + SG) - SG + 24
   return (
@@ -87,8 +91,57 @@ function StateTray({ page, stateEdges, onOpen }: { page: Page; stateEdges: FlowE
   )
 }
 
+/** 聚焦态：完整截图 + 模块热区 + 聚光灯蒙层，直接绘制在画布节点内 */
+function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page; stateId: string; moduleId: string | null; onSelectModule: (m: string | null) => void }) {
+  const state = page.states.find((s) => s.id === stateId) ?? page.states[0]
+  const zones = page.moduleInstances.filter((i) => i.hotzones[state.id])
+  const selected = moduleId ? zones.find((z) => z.moduleId === moduleId) : undefined
+  const hz = selected?.hotzones[state.id]
+
+  return (
+    <>
+      <div
+        className="focus-shot nodrag"
+        onClick={(e) => {
+          e.stopPropagation()
+          onSelectModule(null)
+        }}
+      >
+        <img src={'/' + state.image} alt={`${page.name} · ${state.name}`} draggable={false} />
+        {hz && (
+          <>
+            <div className="mask" style={{ left: 0, top: 0, width: '100%', height: `${hz.y}%` }} />
+            <div className="mask" style={{ left: 0, top: `${hz.y}%`, width: `${hz.x}%`, height: `${hz.h}%` }} />
+            <div className="mask" style={{ left: `${hz.x + hz.w}%`, top: `${hz.y}%`, width: `${100 - hz.x - hz.w}%`, height: `${hz.h}%` }} />
+            <div className="mask" style={{ left: 0, top: `${hz.y + hz.h}%`, width: '100%', height: `${100 - hz.y - hz.h}%` }} />
+          </>
+        )}
+        {zones.map((z) => {
+          const zone = z.hotzones[state.id]
+          const isSel = z.moduleId === moduleId
+          return (
+            <div
+              key={z.moduleId}
+              className={`hz${isSel ? ' sel' : ''}`}
+              style={{ left: `${zone.x}%`, top: `${zone.y}%`, width: `${zone.w}%`, height: `${zone.h}%` }}
+              title={getModule(z.moduleId).name}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectModule(isSel ? null : z.moduleId)
+              }}
+            />
+          )
+        })}
+      </div>
+      <div className="focus-caption">{moduleId ? `已选中：${getModule(moduleId).name}` : '点击虚线热区选中模块'}</div>
+    </>
+  )
+}
+
 export default function PageCardNode(props: NodeProps) {
-  const { page, expanded, stateEdges, onOpen, onToggle } = props.data as unknown as PageCardData
+  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule } =
+    props.data as unknown as PageCardData
+
   return (
     <div className="page-card-wrap">
       <Handle type="target" position={Position.Left} id="l" className="hh" />
@@ -97,25 +150,30 @@ export default function PageCardNode(props: NodeProps) {
       <Handle type="target" position={Position.Bottom} id="bt" className="hh" />
       <Handle type="source" position={Position.Top} id="ts" className="hh" />
       <Handle type="target" position={Position.Top} id="tt" className="hh" />
-      {/* 打开页面由 ReactFlow onNodeClick 统一处理（节点需保留指针事件） */}
-      <div className="page-card">
+      <div className={`page-card${isFocused ? ' focused' : ''}`}>
         <div className="page-card-name" title={page.name}>
           {page.name}
         </div>
-        <div className="page-thumb-box">
-          <img className="page-thumb" src={'/' + page.states[0].image} draggable={false} alt={page.name} />
-        </div>
-        <button
-          className={`state-badge${expanded ? ' on' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle(page.id)
-          }}
-        >
-          {page.states.length} 状态 {expanded ? '▴' : '▾'}
-        </button>
+        {isFocused ? (
+          <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} onSelectModule={onSelectModule} />
+        ) : (
+          <>
+            <div className="page-thumb-box">
+              <img className="page-thumb" src={'/' + page.states[0].image} draggable={false} alt={page.name} />
+            </div>
+            <button
+              className={`state-badge${expanded ? ' on' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggle(page.id)
+              }}
+            >
+              {page.states.length} 状态 {expanded ? '▴' : '▾'}
+            </button>
+          </>
+        )}
       </div>
-      {expanded && <StateTray page={page} stateEdges={stateEdges} onOpen={onOpen} />}
+      {expanded && !isFocused && <StateTray page={page} stateEdges={stateEdges} />}
     </div>
   )
 }

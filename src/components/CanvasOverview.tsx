@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Background, Controls, MiniMap, ReactFlow, type ReactFlowInstance } from '@xyflow/react'
-import { buildGraph, type GraphCallbacks } from '../layout'
+import { buildGraph, type FocusState, type GraphCallbacks } from '../layout'
 import ProcessGroupNode from './nodes/ProcessGroupNode'
 import PageCardNode from './nodes/PageCardNode'
 import FlowEdge from './edges/FlowEdge'
@@ -11,15 +11,16 @@ const edgeTypes = { flow: FlowEdge }
 interface Props extends GraphCallbacks {
   expanded: Set<string>
   openEdgeId: string | null
+  focus: FocusState | null
   onInit: (instance: ReactFlowInstance) => void
 }
 
 export default function CanvasOverview(props: Props) {
-  const { expanded, openEdgeId, onOpenPage, onToggleExpand, onOpenEdge, onInit } = props
+  const { expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onInit } = props
 
   const graph = useMemo(
-    () => buildGraph(expanded, openEdgeId, { onOpenPage, onToggleExpand, onOpenEdge }),
-    [expanded, openEdgeId, onOpenPage, onToggleExpand, onOpenEdge],
+    () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule }),
+    [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule],
   )
 
   return (
@@ -32,7 +33,10 @@ export default function CanvasOverview(props: Props) {
       fitView
       fitViewOptions={{ padding: 0.12 }}
       minZoom={0.12}
-      maxZoom={2}
+      maxZoom={2.5}
+      panOnScroll
+      zoomOnScroll={false}
+      zoomOnPinch
       nodesDraggable={false}
       nodesConnectable={false}
       elementsSelectable={false}

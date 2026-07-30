@@ -18,15 +18,29 @@ export const EDGE_COLOR: Record<EdgeType, string> = {
   back: '#9aa1ab',
 }
 
+/** 聚焦态：画布内缩放推近页面节点，右侧停靠详情面板 */
+export interface FocusState {
+  pageId: string
+  stateId: string
+  view: 'page' | 'module'
+  moduleId: string | null
+}
+
+/** 聚焦时页面卡片展开完整截图后的近似高度（用于视口计算） */
+export const FOCUS_CARD_H = 452
+export const PANEL_W = 380
+
 export interface GraphCallbacks {
   onOpenPage: (pageId: string) => void
   onToggleExpand: (pageId: string) => void
   onOpenEdge: (edgeId: string | null) => void
+  onSelectModule: (moduleId: string | null) => void
 }
 
 export function buildGraph(
   expanded: Set<string>,
   openEdgeId: string | null,
+  focus: FocusState | null,
   cb: GraphCallbacks,
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
@@ -61,12 +75,15 @@ export function buildGraph(
           page,
           expanded: expanded.has(page.id),
           stateEdges: stateEdgesOf(page.id),
-          onOpen: cb.onOpenPage,
+          focusStateId: focus?.pageId === page.id ? focus.stateId : null,
+          focusModuleId: focus?.pageId === page.id ? focus.moduleId : null,
+          isFocused: focus?.pageId === page.id,
           onToggle: cb.onToggleExpand,
+          onSelectModule: cb.onSelectModule,
         },
         draggable: false,
         selectable: false,
-        zIndex: expanded.has(page.id) ? 1000 : 1,
+        zIndex: focus?.pageId === page.id ? 1200 : expanded.has(page.id) ? 1000 : 1,
       })
     })
 

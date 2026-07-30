@@ -1,14 +1,18 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ReactFlowProvider, type ReactFlowInstance } from '@xyflow/react'
 import CanvasOverview from './components/CanvasOverview'
-import FocusView, { type FocusState } from './components/focus/FocusView'
+import FocusPanel from './components/focus/FocusPanel'
 import { getPage, project } from './data/loader'
+import { CARD_W, FOCUS_CARD_H, PANEL_W, type FocusState } from './layout'
 
 export default function App() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
   const rfRef = useRef<ReactFlowInstance | null>(null)
+  const wrapRef = useRef<HTMLElement | null>(null)
+  const focusRef = useRef<FocusState | null>(null)
+  focusRef.current = focus
 
   const onToggleExpand = useCallback((pageId: string) => {
     setExpanded((prev) => {
@@ -19,17 +23,77 @@ export default function App() {
     })
   }, [])
 
-  const onOpenPage = useCallback((pageId: string) => {
-    rfRef.current?.fitView({ nodes: [{ id: pageId }], duration: 450, padding: 0.4, maxZoom: 1.4 })
-    window.setTimeout(() => {
-      setFocus({ pageId, stateId: getPage(pageId).states[0].id, view: 'page', moduleId: null })
-    }, 430)
+  /** 画布内推近到页面节点：左侧留出面板宽度，缩放到合适比例 */
+  const zoomToPage = useCallback((pageId: string) => {
+    const rf = rfRef.current
+    const wrap = wrapRef.current
+    if (!rf || !wrap) return
+    const inode = rf.getInternalNode(pageId)
+    if (!inode) return
+    const abs = inode.internals.positionAbsolute
+    const availW = wrap.clientWidth - PANEL_W
+    const availH = wrap.clientHeight
+    const zoom = Math.min(1.6, Math.max(0.5, (availH * 0.82) / FOCUS_CARD_H))
+    const cx = abs.x + CARD_W / 2
+    const cy = abs.y + FOCUS_CARD_H / 2
+    rf.setViewport(
+      { x: availW / 2 - cx * zoom, y: availH / 2 - cy * zoom, zoom },
+      { duration: 480 },
+    )
+  }, [])
+
+  const focusPage = useCallback(
+    (pageId: string, moduleId?: string) => {
+      const page = getPage(pageId)
+      const stateWithModule = moduleId
+        ? page.states.find((s) => page.moduleInstances.some((i) => i.moduleId === moduleId && i.hotzones[s.id]))?.id
+        : undefined
+      setFocus({
+        pageId,
+        stateId: stateWithModule ?? page.states[0].id,
+        view: moduleId ? 'module' : 'page',
+        moduleId: moduleId ?? null,
+      })
+      requestAnimationFrame(() => zoomToPage(pageId))
+    },
+    [zoomToPage],
+  )
+
+  const onOpenPage = useCallback(
+    (pageId: string) => {
+      if (focusRef.current?.pageId === pageId) {
+        zoomToPage(pageId)
+        return
+      }
+      focusPage(pageId)
+    },
+    [focusPage, zoomToPage],
+  )
+
+  const onSelectModule = useCallback((moduleId: string | null) => {
+    setFocus((f) => (f ? { ...f, view: moduleId ? 'module' : 'page', moduleId } : f))
   }, [])
 
   const closeFocus = useCallback(() => {
     setFocus(null)
     window.setTimeout(() => rfRef.current?.fitView({ duration: 500, padding: 0.12 }), 30)
   }, [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const f = focusRef.current
+      if (!f) return
+      if (e.key === 'Escape') {
+        if (f.view === 'module') setFocus({ ...f, view: 'page', moduleId: null })
+        else closeFocus()
+      }
+      const idx = project.pages.findIndex((p) => p.id === f.pageId)
+      if (e.key === 'ArrowLeft' && idx > 0) focusPage(project.pages[idx - 1].id)
+      if (e.key === 'ArrowRight' && idx < project.pages.length - 1) focusPage(project.pages[idx + 1].id)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [closeFocus, focusPage])
 
   return (
     <div className="app">
@@ -40,20 +104,30 @@ export default function App() {
         <span className="topbar-hint">点击页面卡片聚焦 · 点击「n 状态」角标展开 · 点击连线看事件与条件</span>
         <span className="ver">Demo · {project.project.version}</span>
       </header>
-      <main className="canvas-wrap">
+      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)}>
         <ReactFlowProvider>
           <CanvasOverview
             expanded={expanded}
             openEdgeId={openEdgeId}
+            focus={focus}
             onOpenPage={onOpenPage}
             onToggleExpand={onToggleExpand}
             onOpenEdge={setOpenEdgeId}
+            onSelectModule={onSelectModule}
             onInit={(inst) => {
               rfRef.current = inst
             }}
           />
         </ReactFlowProvider>
-        {focus && <FocusView focus={focus} setFocus={setFocus} onClose={closeFocus} />}
+        {focus && (
+          <FocusPanel
+            focus={focus}
+            onClose={closeFocus}
+            onGoPage={(pageId, moduleId) => focusPage(pageId, moduleId)}
+            onState={(stateId) => setFocus((f) => (f ? { ...f, stateId } : f))}
+            onSelectModule={onSelectModule}
+          />
+        )}
       </main>
     </div>
   )
