@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812">
-<rect width="375" height="812" fill="#ffffff"/>
-<rect x="0.5" y="0.5" width="374" height="811" fill="none" stroke="#e5e7eb"/>
-<rect x="7.5" y="8.1" width="360.0" height="40.6" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="32.8" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">导航栏</text>
-<rect x="22.5" y="65.0" width="330.0" height="89.3" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="114.0" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">金额展示</text>
-<rect x="22.5" y="162.4" width="330.0" height="65.0" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="199.2" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">主操作按钮</text>
-<rect x="22.5" y="243.6" width="330.0" height="97.4" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-dasharray="5 4"/><text x="187.5" y="296.7" text-anchor="middle" font-size="13" fill="#6b7280" font-family="-apple-system,'PingFang SC',sans-serif">功能宫格</text>
-<text x="187.5" y="796" text-anchor="middle" font-size="12" fill="#c0c4cc" font-family="-apple-system,'PingFang SC',sans-serif">频道首页 · 默认 · 占位图</text>
-</svg>
