@@ -670,25 +670,14 @@
               "w": 46,
               "h": 3.8
             },
-            "expanded": {
-              "x": 40,
-              "y": 68.5,
-              "w": 55,
-              "h": 3.4
-            },
             "nocoupon-collapsed": {
               "x": 48,
               "y": 49.2,
               "w": 46,
               "h": 3.8
-            },
-            "nocoupon-expanded": {
-              "x": 40,
-              "y": 69.3,
-              "w": 55,
-              "h": 3.4
             }
-          }
+          },
+          "visibleWhen": "仅期数收起时展示"
         },
         {
           "moduleId": "submit-bar",

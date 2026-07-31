@@ -126,7 +126,16 @@ export default function App() {
             focus={focus}
             onClose={closeFocus}
             onGoPage={(pageId, moduleId) => focusPage(pageId, moduleId)}
-            onState={(stateId) => setFocus((f) => (f ? { ...f, stateId } : f))}
+            onState={(stateId) =>
+              setFocus((f) => {
+                if (!f) return f
+                // 切换页面状态后，若选中模块在新状态下不展示，自动取消选中（对应面板卡片置灰）
+                const keep =
+                  !!f.moduleId &&
+                  getPage(f.pageId).moduleInstances.some((i) => i.moduleId === f.moduleId && i.hotzones[stateId])
+                return { ...f, stateId, moduleId: keep ? f.moduleId : null }
+              })
+            }
             onSelectModule={onSelectModule}
           />
         )}

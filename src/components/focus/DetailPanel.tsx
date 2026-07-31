@@ -65,14 +65,18 @@ function ModuleCard({
 
   return (
     <div ref={ref} className={`module-card${expanded ? ' open' : ''}${inState ? '' : ' ghost'}`}>
-      <button className="mc-head" onClick={onToggle} title={inState ? undefined : '当前页面状态下不存在'}>
+      <button className="mc-head" onClick={onToggle} disabled={!inState} title={inState ? undefined : inst.visibleWhen ?? '当前页面状态下不展示'}>
         <span className="mc-name">{mod.name}</span>
         <span className="mc-states">
-          {mod.states.map((s) => (
-            <span key={s.id} className="mc-state-tag">
-              {s.name}
-            </span>
-          ))}
+          {inState ? (
+            mod.states.map((s) => (
+              <span key={s.id} className="mc-state-tag">
+                {s.name}
+              </span>
+            ))
+          ) : (
+            <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
+          )}
         </span>
         <span className="mc-chev">{expanded ? '▾' : '▸'}</span>
       </button>
@@ -95,6 +99,7 @@ function ModuleCard({
             </button>
           </div>
           {editOpen && <ChatEditStub placeholder={`试试：把「${mod.name}」的说明改成…`} />}
+          {inst.visibleWhen && <p className="mc-cond-line">展示条件：{inst.visibleWhen}</p>}
           {current?.note && <p className="state-note">{current.note}</p>}
           <h3>模块说明</h3>
           <p>{mod.desc}</p>

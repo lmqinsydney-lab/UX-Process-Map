@@ -28,6 +28,8 @@ export interface Hotzone {
 export interface ModuleInstance {
   moduleId: string
   instanceNote?: string
+  /** 展示条件说明（如「仅期数收起时展示」）；模块在部分页面状态不展示时填写 */
+  visibleWhen?: string
   /** key = 页面状态 id；某状态无此模块则不配 */
   hotzones: Record<string, Hotzone>
 }
