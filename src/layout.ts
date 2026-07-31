@@ -8,7 +8,7 @@ export const CARD_H = 422
 const GROUP_PAD_X = 24
 const GROUP_PAD_TOP = 58
 const GROUP_PAD_BOTTOM = 30
-const CARD_GAP = 24
+const CARD_GAP = 132
 const GROUP_GAP = 160
 
 export const EDGE_COLOR: Record<EdgeType, string> = {

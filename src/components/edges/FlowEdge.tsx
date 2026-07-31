@@ -72,7 +72,7 @@ export default function FlowEdge(props: EdgeProps) {
       <BaseEdge id={props.id} path={path} style={style} markerEnd={markerEnd} />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label et-${edge.type} nodrag nopan`}
+          className={`edge-label${kind === 'short' ? ' wrap' : ''} et-${edge.type} nodrag nopan`}
           style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
           onClick={(ev) => {
             ev.stopPropagation()
