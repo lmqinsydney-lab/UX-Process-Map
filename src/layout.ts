@@ -30,6 +30,10 @@ export interface FocusState {
 export const FOCUS_CARD_H = 462
 export const PANEL_W = 380
 
+/** 顶部泳道基准高度与间距（画布坐标，负值在分组上方） */
+export const LANE_BASE = 84
+export const LANE_PITCH = 36
+
 export interface GraphCallbacks {
   onOpenPage: (pageId: string) => void
   onToggleExpand: (pageId: string) => void
@@ -102,27 +106,28 @@ export function buildGraph(
     return gap > 220 ? 'long' : 'short'
   }
 
-  /** 区间图着色：水平区间重叠的连线分配到不同泳道，互不交叠 */
+  /**
+   * 泳道分配（按跨度嵌套排层）：窄跨度连线走低泳道，宽跨度连线走高泳道。
+   * 这样升降段只需爬到自己的泳道，不会穿过外层连线的水平段，长线之间零交叉。
+   */
   const assignLanes = (items: { id: string; start: number; end: number }[], margin: number) => {
-    const laneEnds: number[] = []
+    const laneIntervals: { start: number; end: number }[][] = []
     const out: Record<string, number> = {}
-    for (const it of [...items].sort((a, b) => a.start - b.start)) {
-      let lane = laneEnds.findIndex((end) => end + margin <= it.start)
+    for (const it of [...items].sort((a, b) => a.end - a.start - (b.end - b.start))) {
+      let lane = laneIntervals.findIndex((ivs) => ivs.every((v) => v.end + margin <= it.start || it.end + margin <= v.start))
       if (lane === -1) {
-        lane = laneEnds.length
-        laneEnds.push(it.end)
-      } else {
-        laneEnds[lane] = it.end
+        lane = laneIntervals.length
+        laneIntervals.push([])
       }
+      laneIntervals[lane].push({ start: it.start, end: it.end })
       out[it.id] = lane
     }
     return out
   }
 
+  const longEdges = all.filter((e) => kindOf(e) === 'long')
   const longLanes = assignLanes(
-    all
-      .filter((e) => kindOf(e) === 'long')
-      .map((e) => ({ id: e.id, start: pagePos.get(e.from.pageId)!.right, end: pagePos.get(e.to.pageId)!.left })),
+    longEdges.map((e) => ({ id: e.id, start: pagePos.get(e.from.pageId)!.right, end: pagePos.get(e.to.pageId)!.left })),
     40,
   )
   const backLanes = assignLanes(
@@ -136,18 +141,49 @@ export function buildGraph(
     40,
   )
 
-  const srcSeen = new Map<string, number>()
-  const tgtSeen = new Map<string, number>()
+  // 同源/同目标的升降段错位：泳道越高的线，升段越靠左 / 降段越靠右，
+  // 避免爬向高泳道时穿过同组低泳道线的水平段
+  const srcShifts: Record<string, number> = {}
+  const tgtShifts: Record<string, number> = {}
+  const byKey = (key: (e: (typeof all)[number]) => string, shifts: Record<string, number>) => {
+    const groups = new Map<string, typeof longEdges>()
+    for (const e of longEdges) {
+      const k = key(e)
+      if (!groups.has(k)) groups.set(k, [])
+      groups.get(k)!.push(e)
+    }
+    for (const group of groups.values()) {
+      group.sort((a, b) => longLanes[b.id] - longLanes[a.id])
+      group.forEach((e, i) => (shifts[e.id] = i * 10))
+    }
+  }
+  byKey((e) => e.from.pageId, srcShifts)
+  byKey((e) => e.to.pageId, tgtShifts)
+
+  // 无法靠排层消除的交叉（升降段穿过更低泳道的水平段）→ 记录交叉点，渲染成跨线桥
+  const geo = new Map(
+    longEdges.map((e) => [
+      e.id,
+      {
+        upX: pagePos.get(e.from.pageId)!.right + 8 + srcShifts[e.id],
+        downX: pagePos.get(e.to.pageId)!.left - 8 - tgtShifts[e.id],
+        laneY: -(LANE_BASE + longLanes[e.id] * LANE_PITCH),
+      },
+    ]),
+  )
+  const hopsAt = (x: number, laneY: number) =>
+    longEdges
+      .filter((b) => {
+        const g = geo.get(b.id)!
+        return g.laneY > laneY && g.upX + 6 < x && x < g.downX - 6
+      })
+      .map((b) => geo.get(b.id)!.laneY)
+
   const edges: Edge[] = all.map((e) => {
     const kind = kindOf(e)
-    let srcShift = 0
-    let tgtShift = 0
-    if (kind === 'long') {
-      srcShift = (srcSeen.get(e.from.pageId) ?? 0) * 10
-      srcSeen.set(e.from.pageId, (srcSeen.get(e.from.pageId) ?? 0) + 1)
-      tgtShift = (tgtSeen.get(e.to.pageId) ?? 0) * 10
-      tgtSeen.set(e.to.pageId, (tgtSeen.get(e.to.pageId) ?? 0) + 1)
-    }
+    const srcShift = kind === 'long' ? srcShifts[e.id] : 0
+    const tgtShift = kind === 'long' ? tgtShifts[e.id] : 0
+    const g = kind === 'long' ? geo.get(e.id)! : null
     return {
       id: e.id,
       source: e.from.pageId,
@@ -162,6 +198,8 @@ export function buildGraph(
         lane: kind === 'long' ? longLanes[e.id] : kind === 'back' ? backLanes[e.id] : 0,
         srcShift,
         tgtShift,
+        upHops: g ? hopsAt(g.upX, g.laneY) : [],
+        downHops: g ? hopsAt(g.downX, g.laneY) : [],
         open: openEdgeId === e.id,
         fromLabel: endpointLabel(e.from),
         toLabel: endpointLabel(e.to),

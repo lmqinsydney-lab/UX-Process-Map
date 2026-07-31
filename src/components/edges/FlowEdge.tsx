@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
-import { EDGE_COLOR } from '../../layout'
+import { EDGE_COLOR, LANE_BASE, LANE_PITCH } from '../../layout'
 import { EDGE_TYPE_NAME, type FlowEdgeData } from '../../types/model'
 
 interface FlowEdgeDataProps {
@@ -9,6 +9,8 @@ interface FlowEdgeDataProps {
   lane: number
   srcShift: number
   tgtShift: number
+  upHops: number[]
+  downHops: number[]
   open: boolean
   fromLabel: string
   toLabel: string
@@ -17,7 +19,8 @@ interface FlowEdgeDataProps {
 
 export default function FlowEdge(props: EdgeProps) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd } = props
-  const { edge, kind, lane, srcShift, tgtShift, open, fromLabel, toLabel, onOpenEdge } = props.data as unknown as FlowEdgeDataProps
+  const { edge, kind, lane, srcShift, tgtShift, upHops, downHops, open, fromLabel, toLabel, onOpenEdge } =
+    props.data as unknown as FlowEdgeDataProps
 
   let path: string
   let labelX: number
@@ -34,23 +37,23 @@ export default function FlowEdge(props: EdgeProps) {
     labelX = (sourceX + targetX) / 2
     labelY = dip - 16
   } else if (kind === 'long') {
-    // 长距离连线走正交路径：卡片间隙垂直上升 → 顶部专属泳道横穿 → 目标间隙垂直下降
+    // 长距离连线走正交路径：卡片间隙垂直上升 → 顶部专属泳道横穿 → 目标间隙垂直下降；
+    // 垂直段与更低泳道相交处画跨线桥（小弧跳过）
     const r = 8
+    const hr = 7
     const upX = sourceX + 8 + srcShift
     const downX = targetX - 8 - tgtShift
-    const topY = -84 - lane * 36
-    path = [
-      `M ${sourceX} ${sourceY}`,
-      `L ${upX - r} ${sourceY}`,
-      `Q ${upX} ${sourceY} ${upX} ${sourceY - r}`,
-      `L ${upX} ${topY + r}`,
-      `Q ${upX} ${topY} ${upX + r} ${topY}`,
-      `L ${downX - r} ${topY}`,
-      `Q ${downX} ${topY} ${downX} ${topY + r}`,
-      `L ${downX} ${targetY - r}`,
-      `Q ${downX} ${targetY} ${downX + r} ${targetY}`,
-      `L ${targetX} ${targetY}`,
-    ].join(' ')
+    const topY = -(LANE_BASE + lane * LANE_PITCH)
+    const parts = [`M ${sourceX} ${sourceY}`, `L ${upX - r} ${sourceY}`, `Q ${upX} ${sourceY} ${upX} ${sourceY - r}`]
+    for (const hy of [...upHops].sort((a, b) => b - a)) {
+      parts.push(`L ${upX} ${hy + hr}`, `A ${hr} ${hr} 0 0 1 ${upX} ${hy - hr}`)
+    }
+    parts.push(`L ${upX} ${topY + r}`, `Q ${upX} ${topY} ${upX + r} ${topY}`, `L ${downX - r} ${topY}`, `Q ${downX} ${topY} ${downX} ${topY + r}`)
+    for (const hy of [...downHops].sort((a, b) => a - b)) {
+      parts.push(`L ${downX} ${hy - hr}`, `A ${hr} ${hr} 0 0 0 ${downX} ${hy + hr}`)
+    }
+    parts.push(`L ${downX} ${targetY - r}`, `Q ${downX} ${targetY} ${downX + r} ${targetY}`, `L ${targetX} ${targetY}`)
+    path = parts.join(' ')
     labelX = (upX + downX) / 2
     labelY = topY
   } else {
