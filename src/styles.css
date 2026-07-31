@@ -95,8 +95,10 @@ button { font-family: inherit; cursor: pointer; }
 .et-back { color: #6b7280; border-color: #d6d9df; }
 
 /* ---------- 连线标签与气泡 ---------- */
-/* 标签层置于连线之上，确保药丸遮住其下方线段 */
+/* 标签层置于连线之上，确保药丸遮住其下方线段；
+   同时禁止 React Flow 随聚焦节点抬升边的 SVG 层级（内联 z-index 会盖住标签与气泡） */
 .react-flow__edgelabel-renderer { z-index: 10; }
+.react-flow__edges > svg { z-index: 0 !important; }
 .edge-label {
   position: absolute; font-size: 12px; padding: 3px 10px; border-radius: 999px;
   background: #fff; border: 1px solid #d6d9df; color: #4b5563;
