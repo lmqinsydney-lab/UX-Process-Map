@@ -5,4 +5,6 @@ declare global {
   }
 }
 
-export const asset = (path: string): string => window.__ASSETS__?.[path] ?? '/' + path
+const BASE: string = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'
+
+export const asset = (path: string): string => window.__ASSETS__?.[path] ?? BASE + path
