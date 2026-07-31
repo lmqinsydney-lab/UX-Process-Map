@@ -189,6 +189,7 @@ export function buildGraph(
       source: e.from.pageId,
       target: e.to.pageId,
       type: 'flow',
+      zIndex: 0,
       sourceHandle: kind === 'loop' ? 'ts' : kind === 'back' ? 'bs' : 'r',
       targetHandle: kind === 'loop' ? 'tt' : kind === 'back' ? 'bt' : 'l',
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: EDGE_COLOR[e.type] },

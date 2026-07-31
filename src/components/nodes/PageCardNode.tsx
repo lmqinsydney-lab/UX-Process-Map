@@ -134,7 +134,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
           )
         })}
       </div>
-      <div className="focus-caption">{moduleId ? `已选中：${getModule(moduleId).name}` : '点击虚线热区选中模块'}</div>
+      <div className="focus-caption">{moduleId ? `已选中：${getModule(moduleId).name}` : '悬停页面查看模块热区，点击选中'}</div>
     </>
   )
 }
@@ -169,7 +169,7 @@ export default function PageCardNode(props: NodeProps) {
                 onToggle(page.id)
               }}
             >
-              {page.states.length} 状态 {expanded ? '▴' : '▾'}
+              {page.states.length} 个状态 {expanded ? '▴' : '▾'}
             </button>
           </>
         )}

@@ -131,9 +131,11 @@ button { font-family: inherit; cursor: pointer; }
 .focus-shot > img { width: 100%; display: block; }
 .focus-caption { font-size: 11px; color: #9ca3af; text-align: center; padding-top: 8px; }
 .mask { position: absolute; background: rgba(15, 17, 21, 0.55); pointer-events: none; transition: all 0.18s ease; }
-.hz { position: absolute; border: 1.5px dashed rgba(79, 70, 229, 0.55); border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
-.hz:hover { border-color: #4f46e5; background: rgba(79, 70, 229, 0.08); border-style: solid; }
-.hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+/* 模块热区虚线：仅当鼠标悬停在页面内时显现 */
+.hz { position: absolute; border: 1.5px dashed transparent; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
+.focus-shot:hover .hz { border-color: rgba(79, 70, 229, 0.55); }
+.focus-shot .hz:hover { border-color: #4f46e5; background: rgba(79, 70, 229, 0.08); border-style: solid; }
+.hz.sel, .focus-shot:hover .hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 
 /* ---------- 右侧停靠面板 ---------- */
 .focus-panel {
