@@ -197,16 +197,31 @@ button { font-family: inherit; cursor: pointer; }
 .inst-note { color: #6b7280; background: #f7f8fa; border-radius: 8px; padding: 8px 10px; }
 .state-note { font-size: 12px; color: #6b7280; background: #f7f8fa; border-radius: 8px; padding: 8px 10px; margin: -6px 0 14px; }
 
-.module-list { display: flex; flex-direction: column; }
-.module-row {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; color: #1f2329; background: none; border: none; border-bottom: 1px solid #f0f1f4;
-  padding: 9px 6px; text-align: left; border-radius: 6px;
+/* ---------- 模块手风琴卡片 ---------- */
+.module-cards { display: flex; flex-direction: column; gap: 8px; }
+.module-card { border: 1px solid #e8eaee; border-radius: 10px; overflow: hidden; background: #fff; }
+.module-card.open { border-color: #4f46e5; box-shadow: 0 2px 12px rgba(79, 70, 229, 0.1); }
+.module-card.ghost .mc-name { color: #b6bac2; }
+.mc-head {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: none; border: none; padding: 10px 12px; text-align: left;
 }
-.module-row:hover { background: #f7f8fa; }
-.module-row.on { background: #eef0fe; color: #4f46e5; }
-.module-row.ghost { color: #b6bac2; }
-.module-row .chev { color: #c0c4cc; }
+.mc-head:hover { background: #f7f8fa; }
+.module-card.open .mc-head { border-bottom: 1px solid #f0f1f4; }
+.mc-name { font-size: 13px; font-weight: 500; color: #1f2329; flex-shrink: 0; }
+.module-card.open .mc-name { color: #4f46e5; }
+.mc-states { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; justify-content: flex-end; }
+.mc-state-tag {
+  font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  background: #f4f5f7; color: #6b7280;
+}
+.mc-chev { color: #c0c4cc; font-size: 12px; flex-shrink: 0; }
+.mc-body { padding: 12px; }
+.mc-body h3 { font-size: 12px; color: #9ca3af; font-weight: 500; margin: 12px 0 6px; }
+.mc-body h3:first-child { margin-top: 0; }
+.mc-body p { font-size: 13px; color: #374151; line-height: 1.7; margin: 0 0 6px; }
+.mc-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.mc-toolbar .tabs { margin-bottom: 6px; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {

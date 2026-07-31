@@ -51,10 +51,11 @@ export default function App() {
       setFocus({
         pageId,
         stateId: stateWithModule ?? page.states[0].id,
-        view: moduleId ? 'module' : 'page',
         moduleId: moduleId ?? null,
       })
-      requestAnimationFrame(() => zoomToPage(pageId))
+      // 等 React 提交后再推近视口；再补一次防止首次聚焦时序竞争
+      window.setTimeout(() => zoomToPage(pageId), 60)
+      window.setTimeout(() => zoomToPage(pageId), 320)
     },
     [zoomToPage],
   )
@@ -71,7 +72,7 @@ export default function App() {
   )
 
   const onSelectModule = useCallback((moduleId: string | null) => {
-    setFocus((f) => (f ? { ...f, view: moduleId ? 'module' : 'page', moduleId } : f))
+    setFocus((f) => (f ? { ...f, moduleId } : f))
   }, [])
 
   const closeFocus = useCallback(() => {
@@ -84,7 +85,7 @@ export default function App() {
       const f = focusRef.current
       if (!f) return
       if (e.key === 'Escape') {
-        if (f.view === 'module') setFocus({ ...f, view: 'page', moduleId: null })
+        if (f.moduleId) setFocus({ ...f, moduleId: null })
         else closeFocus()
       }
       const idx = project.pages.findIndex((p) => p.id === f.pageId)
@@ -116,6 +117,7 @@ export default function App() {
             onSelectModule={onSelectModule}
             onInit={(inst) => {
               rfRef.current = inst
+              ;(window as unknown as { __rf?: ReactFlowInstance }).__rf = inst
             }}
           />
         </ReactFlowProvider>

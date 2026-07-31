@@ -18,11 +18,10 @@ export const EDGE_COLOR: Record<EdgeType, string> = {
   back: '#9aa1ab',
 }
 
-/** 聚焦态：画布内缩放推近页面节点，右侧停靠详情面板 */
+/** 聚焦态：画布内缩放推近页面节点，右侧停靠详情面板；moduleId = 当前选中/展开的模块 */
 export interface FocusState {
   pageId: string
   stateId: string
-  view: 'page' | 'module'
   moduleId: string | null
 }
 

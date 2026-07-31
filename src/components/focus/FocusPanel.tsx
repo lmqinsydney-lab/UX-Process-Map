@@ -39,7 +39,6 @@ export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelect
         <DetailPanel
           page={page}
           stateId={focus.stateId}
-          view={focus.view}
           moduleId={focus.moduleId}
           onState={onState}
           onSelectModule={onSelectModule}
