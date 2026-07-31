@@ -65,40 +65,47 @@ function ModuleCard({
 
   return (
     <div ref={ref} className={`module-card${expanded ? ' open' : ''}${inState ? '' : ' ghost'}`}>
-      <button className="mc-head" onClick={onToggle} disabled={!inState} title={inState ? undefined : inst.visibleWhen ?? '当前页面状态下不展示'}>
+      <div
+        className="mc-head"
+        onClick={inState ? onToggle : undefined}
+        title={inState ? undefined : inst.visibleWhen ?? '当前页面状态下不展示'}
+      >
         <span className="mc-name">{mod.name}</span>
-        <span className="mc-states">
-          {inState ? (
-            mod.states.map((s) => (
-              <span key={s.id} className="mc-state-tag">
-                {s.name}
-              </span>
-            ))
-          ) : (
-            <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
-          )}
-        </span>
+        <span className="mc-spacer" />
+        {inState && (
+          <button
+            className="edit-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditOpen(!editOpen)
+            }}
+            title="对话编辑（Demo 占位）"
+          >
+            ✎ 编辑
+          </button>
+        )}
         <span className="mc-chev">{expanded ? '▾' : '▸'}</span>
-      </button>
+      </div>
+      <div className="mc-tabs">
+        {inState ? (
+          <div className="tabs">
+            {mod.states.map((s) => (
+              <button key={s.id} className={`tab${s.id === modState ? ' on' : ''}`} onClick={() => pickModState(s.id)}>
+                {s.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
+        )}
+      </div>
+      {editOpen && inState && (
+        <div className="mc-stub">
+          <ChatEditStub placeholder={`试试：把「${mod.name}」的说明改成…`} />
+        </div>
+      )}
       {expanded && (
         <div className="mc-body">
-          <div className="mc-toolbar">
-            {mod.states.length > 1 ? (
-              <div className="tabs">
-                {mod.states.map((s) => (
-                  <button key={s.id} className={`tab${s.id === modState ? ' on' : ''}`} onClick={() => pickModState(s.id)}>
-                    {s.name}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <span />
-            )}
-            <button className="edit-btn" onClick={() => setEditOpen(!editOpen)} title="对话编辑（Demo 占位）">
-              ✎ 编辑
-            </button>
-          </div>
-          {editOpen && <ChatEditStub placeholder={`试试：把「${mod.name}」的说明改成…`} />}
           {inst.visibleWhen && <p className="mc-cond-line">展示条件：{inst.visibleWhen}</p>}
           {current?.note && <p className="state-note">{current.note}</p>}
           <h3>模块说明</h3>
