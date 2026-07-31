@@ -86,19 +86,21 @@ function ModuleCard({
         )}
         <span className="mc-chev">{expanded ? '▾' : '▸'}</span>
       </div>
-      <div className="mc-tabs">
-        {inState ? (
-          <div className="tabs">
-            {mod.states.map((s) => (
-              <button key={s.id} className={`tab${s.id === modState ? ' on' : ''}`} onClick={() => pickModState(s.id)}>
-                {s.name}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
-        )}
-      </div>
+      {(!inState || mod.states.length > 1) && (
+        <div className="mc-tabs">
+          {inState ? (
+            <div className="tabs">
+              {mod.states.map((s) => (
+                <button key={s.id} className={`tab${s.id === modState ? ' on' : ''}`} onClick={() => pickModState(s.id)}>
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
+          )}
+        </div>
+      )}
       {editOpen && inState && (
         <div className="mc-stub">
           <ChatEditStub placeholder={`试试：把「${mod.name}」的说明改成…`} />
