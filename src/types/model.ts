@@ -37,6 +37,9 @@ export interface PageState {
   name: string
   image: string
   note?: string
+  /** 该页面状态对应的模块状态组合（key = moduleId, value = 模块状态 id）；
+      用于模块状态切换与页面截图联动 */
+  moduleStates?: Record<string, string>
 }
 
 export interface OnlineRef {

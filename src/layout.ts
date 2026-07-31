@@ -64,7 +64,8 @@ export function buildGraph(
       data: { node: pn, width, height },
       draggable: false,
       selectable: false,
-      zIndex: 0,
+      // 分组底板置于连线之下，避免遮住从组内页面伸出的连线段
+      zIndex: -1,
     })
 
     pages.forEach((page, i) => {

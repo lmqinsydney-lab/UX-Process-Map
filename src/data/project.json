@@ -49,14 +49,15 @@
       "id": "bill-all",
       "processNodeId": "entry",
       "name": "全部账单",
-      "desc": "全部账单页；底部分期还款按钮增加分期优惠气泡引导。",
+      "desc": "全部账单页（账单总览）：应还金额与还款按钮居中，分期还款按钮增加分期优惠气泡引导。",
       "states": [{ "id": "default", "name": "默认", "image": "assets/pages/bill-all/default.png" }],
       "moduleInstances": [
-        { "moduleId": "nav-bar", "hotzones": { "default": { "x": 2, "y": 6, "w": 96, "h": 4.5 } } },
-        { "moduleId": "amount-display", "hotzones": { "default": { "x": 4, "y": 20.5, "w": 92, "h": 18 } } },
-        { "moduleId": "bill-list", "hotzones": { "default": { "x": 4, "y": 40, "w": 92, "h": 48 } } },
-        { "moduleId": "action-buttons", "hotzones": { "default": { "x": 4, "y": 89.5, "w": 92, "h": 7 } } },
-        { "moduleId": "coupon-bubble", "instanceNote": "紧贴分期还款按钮右上角展示", "hotzones": { "default": { "x": 75, "y": 87.6, "w": 21, "h": 3 } } }
+        { "moduleId": "nav-bar", "hotzones": { "default": { "x": 2, "y": 6, "w": 96, "h": 4 } } },
+        { "moduleId": "amount-display", "instanceNote": "4月应还金额与还款日文案", "hotzones": { "default": { "x": 4, "y": 19.5, "w": 92, "h": 16.5 } } },
+        { "moduleId": "action-buttons", "hotzones": { "default": { "x": 8, "y": 37.5, "w": 84, "h": 6 } } },
+        { "moduleId": "coupon-bubble", "instanceNote": "「首期0息」气泡挂在分期还款按钮右上角", "hotzones": { "default": { "x": 73, "y": 36.3, "w": 22, "h": 3 } } },
+        { "moduleId": "bill-list", "instanceNote": "待还汇总：8月待还 / 全部待还", "hotzones": { "default": { "x": 6, "y": 47, "w": 88, "h": 17 } } },
+        { "moduleId": "quick-grid", "instanceNote": "更多记录：退款记录 / 还款记录 / 历史账单", "hotzones": { "default": { "x": 4, "y": 66.5, "w": 92, "h": 14 } } }
       ]
     },
     {
@@ -80,10 +81,10 @@
       "desc": "还款主页面，承接三个入口的气泡动线；分期优惠与期数选择联动，选中未配置优惠的期数时展示引导标签。",
       "onlineRefs": [{ "name": "还款页 · 线上版本（占位链接）", "url": "#" }],
       "states": [
-        { "id": "collapsed", "name": "不展开期数", "image": "assets/pages/repay-page/collapsed.png" },
-        { "id": "expanded", "name": "展开期数", "image": "assets/pages/repay-page/expanded.png" },
-        { "id": "nocoupon-expanded", "name": "未配置优惠-期数展开", "image": "assets/pages/repay-page/nocoupon-expanded.png", "note": "当前选中期数（3期）未配置优惠，其余期数仍展示优惠角标" },
-        { "id": "nocoupon-collapsed", "name": "未配置优惠-期数收起", "image": "assets/pages/repay-page/nocoupon-collapsed.png", "note": "展示「待使用-首期0息优惠」引导标签" }
+        { "id": "collapsed", "name": "不展开期数", "image": "assets/pages/repay-page/collapsed.png", "moduleStates": { "term-selector": "collapsed", "installment-coupon": "has" } },
+        { "id": "expanded", "name": "展开期数", "image": "assets/pages/repay-page/expanded.png", "moduleStates": { "term-selector": "expanded", "installment-coupon": "has" } },
+        { "id": "nocoupon-expanded", "name": "未配置优惠-期数展开", "image": "assets/pages/repay-page/nocoupon-expanded.png", "note": "当前选中期数（3期）未配置优惠，其余期数仍展示优惠角标", "moduleStates": { "term-selector": "expanded", "installment-coupon": "none" } },
+        { "id": "nocoupon-collapsed", "name": "未配置优惠-期数收起", "image": "assets/pages/repay-page/nocoupon-collapsed.png", "note": "展示「待使用-首期0息优惠」引导标签", "moduleStates": { "term-selector": "collapsed", "installment-coupon": "none" } }
       ],
       "moduleInstances": [
         { "moduleId": "nav-bar", "hotzones": { "collapsed": { "x": 2, "y": 6, "w": 96, "h": 4.5 }, "expanded": { "x": 2, "y": 6, "w": 96, "h": 4.5 }, "nocoupon-expanded": { "x": 2, "y": 6, "w": 96, "h": 4.5 }, "nocoupon-collapsed": { "x": 2, "y": 6, "w": 96, "h": 4.5 } } },
