@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getModule, getProcessNode, pagesWithModule } from '../../data/loader'
+import { getModule, pagesWithModule } from '../../data/loader'
 import type { ModuleInstance, Page } from '../../types/model'
 import ChatEditStub from './ChatEditStub'
 
@@ -134,17 +134,13 @@ function ModuleCard({
 }
 
 export default function DetailPanel({ page, stateId, moduleId, onState, onSelectModule, onJump }: Props) {
-  const processNode = getProcessNode(page.processNodeId)
   const [editOpen, setEditOpen] = useState(false)
 
   return (
     <aside className="panel">
       <div className="panel-inner" key={page.id}>
         <div className="panel-head">
-          <div>
-            <div className="crumb-sm">{processNode.name}</div>
-            <h2>{page.name}</h2>
-          </div>
+          <h2>{page.name}</h2>
           <button className="edit-btn" onClick={() => setEditOpen(!editOpen)} title="对话编辑（Demo 占位）">
             ✎ 编辑
           </button>
