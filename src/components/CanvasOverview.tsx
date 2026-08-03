@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Background, Controls, MiniMap, ReactFlow, useReactFlow, useStoreApi, type ReactFlowInstance } from '@xyflow/react'
 import { buildGraph, type FocusState, type GraphCallbacks } from '../layout'
 import ProcessGroupNode from './nodes/ProcessGroupNode'
@@ -27,26 +27,35 @@ export default function CanvasOverview(props: Props) {
   // 所有连线会静默消失。挂载后若未初始化则手动喂一次 DOM 尺寸。
   const storeApi = useStoreApi()
   const rf = useReactFlow()
+  const didInitialFit = useRef(false)
   useEffect(() => {
     const t = window.setTimeout(() => {
       const s = storeApi.getState() as unknown as {
-        nodesInitialized: boolean
         domNode: HTMLElement | null
+        nodeLookup: Map<string, { measured?: { width?: number }; internals?: { handleBounds?: unknown } }>
         updateNodeInternals: (m: Map<string, { id: string; nodeElement: HTMLElement; force: boolean }>) => void
       }
-      if (s.nodesInitialized || !s.domNode) return
+      if (!s.domNode) return
+      // 只补喂真正没有测量结果的节点，避免正常环境下反复触发
       const updates = new Map<string, { id: string; nodeElement: HTMLElement; force: boolean }>()
       s.domNode.querySelectorAll<HTMLElement>('.react-flow__node').forEach((el) => {
         const id = el.getAttribute('data-id')
-        if (id) updates.set(id, { id, nodeElement: el, force: true })
+        const n = id ? s.nodeLookup.get(id) : null
+        if (id && n && !(n.measured?.width && n.internals?.handleBounds)) {
+          updates.set(id, { id, nodeElement: el, force: true })
+        }
       })
       if (updates.size) {
         s.updateNodeInternals(updates)
-        window.requestAnimationFrame(() => rf.fitView({ padding: 0.12 }))
+        // 视口只在首次初始化时适配一次，且聚焦态下绝不重置
+        if (!didInitialFit.current && !focus) {
+          didInitialFit.current = true
+          window.requestAnimationFrame(() => rf.fitView({ padding: 0.12 }))
+        }
       }
     }, 120)
     return () => window.clearTimeout(t)
-  }, [storeApi, rf, graph])
+  }, [storeApi, rf, graph, focus])
 
   return (
     <ReactFlow
