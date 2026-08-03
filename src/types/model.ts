@@ -55,6 +55,8 @@ export interface Page {
   name: string
   desc?: string
   onlineRefs?: OnlineRef[]
+  /** 线上参考页面：不参与流程，仅供聚焦时与当前页面并排对比 */
+  onlineCompare?: { name: string; image: string; note?: string }
   states: PageState[]
   moduleInstances: ModuleInstance[]
 }

@@ -80,6 +80,20 @@ export default function App() {
     window.setTimeout(() => rfRef.current?.fitView({ duration: 500, padding: 0.12 }), 30)
   }, [])
 
+  // 点击气泡/状态托盘以外的区域时关闭它们
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null
+      if (!el) return
+      if (!el.closest('.edge-pop') && !el.closest('.edge-label')) setOpenEdgeId(null)
+      if (!el.closest('.state-tray') && !el.closest('.state-badge')) {
+        setExpanded((prev) => (prev.size ? new Set<string>() : prev))
+      }
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const f = focusRef.current

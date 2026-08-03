@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { asset } from '../../assetUrl'
 import { getModule } from '../../data/loader'
@@ -134,7 +135,6 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
           )
         })}
       </div>
-      <div className="focus-caption">{moduleId ? `已选中：${getModule(moduleId).name}` : '悬停页面查看模块热区，点击选中'}</div>
     </>
   )
 }
@@ -142,6 +142,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
 export default function PageCardNode(props: NodeProps) {
   const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule } =
     props.data as unknown as PageCardData
+  const [compareOpen, setCompareOpen] = useState(false)
 
   return (
     <div className="page-card-wrap">
@@ -158,23 +159,41 @@ export default function PageCardNode(props: NodeProps) {
         {isFocused ? (
           <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} onSelectModule={onSelectModule} />
         ) : (
-          <>
-            <div className="page-thumb-box">
-              <img className="page-thumb" src={asset(page.states[0].image)} draggable={false} alt={page.name} />
-            </div>
-            <button
-              className={`state-badge${expanded ? ' on' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggle(page.id)
-              }}
-            >
-              {page.states.length} 个状态 {expanded ? '▴' : '▾'}
-            </button>
-          </>
+          <div className="page-thumb-box">
+            <img className="page-thumb" src={asset(page.states[0].image)} draggable={false} alt={page.name} />
+          </div>
+        )}
+        {isFocused && page.onlineCompare && (
+          <button
+            className={`compare-btn${compareOpen ? ' on' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setCompareOpen(!compareOpen)
+            }}
+          >
+            ⇆ 对比线上
+          </button>
+        )}
+        {page.states.length > 1 && (
+          <button
+            className={`state-badge${expanded ? ' on' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(page.id)
+            }}
+          >
+            {page.states.length} 个状态 {expanded ? '▴' : '▾'}
+          </button>
         )}
       </div>
-      {expanded && !isFocused && <StateTray page={page} stateEdges={stateEdges} />}
+      {isFocused && compareOpen && page.onlineCompare && (
+        <div className="online-compare nodrag">
+          <div className="oc-title">线上参考 · {page.onlineCompare.name}</div>
+          <img src={asset(page.onlineCompare.image)} draggable={false} alt={page.onlineCompare.name} />
+          {page.onlineCompare.note && <div className="oc-note">{page.onlineCompare.note}</div>}
+        </div>
+      )}
+      {expanded && <StateTray page={page} stateEdges={stateEdges} />}
     </div>
   )
 }

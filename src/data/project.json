@@ -749,93 +749,6 @@
       ]
     },
     {
-      "id": "online-page",
-      "processNodeId": "installment-repay",
-      "name": "线上页面",
-      "desc": "线上已有分期还款页（对照参考）：期数宫格常驻展开、利率文案位置与新版不同。",
-      "onlineRefs": [
-        {
-          "name": "线上页面（占位链接）",
-          "url": "#"
-        }
-      ],
-      "states": [
-        {
-          "id": "default",
-          "name": "线上现状",
-          "image": "assets/pages/online-page/default.png"
-        }
-      ],
-      "moduleInstances": [
-        {
-          "moduleId": "nav-bar",
-          "hotzones": {
-            "default": {
-              "x": 2,
-              "y": 6,
-              "w": 96,
-              "h": 4.5
-            }
-          }
-        },
-        {
-          "moduleId": "repay-copy",
-          "hotzones": {
-            "default": {
-              "x": 4,
-              "y": 12.5,
-              "w": 92,
-              "h": 15
-            }
-          }
-        },
-        {
-          "moduleId": "term-selector",
-          "hotzones": {
-            "default": {
-              "x": 4,
-              "y": 29.5,
-              "w": 92,
-              "h": 13
-            }
-          }
-        },
-        {
-          "moduleId": "rate-info",
-          "hotzones": {
-            "default": {
-              "x": 40,
-              "y": 33,
-              "w": 56,
-              "h": 3.2
-            }
-          }
-        },
-        {
-          "moduleId": "repay-plan",
-          "hotzones": {
-            "default": {
-              "x": 4,
-              "y": 45.5,
-              "w": 92,
-              "h": 8.5
-            }
-          }
-        },
-        {
-          "moduleId": "submit-bar",
-          "hotzones": {
-            "default": {
-              "x": 4,
-              "y": 88.5,
-              "w": 92,
-              "h": 7
-            }
-          }
-        }
-      ]
-    },
-    {
       "id": "ir-channel-home",
       "processNodeId": "installment-repay",
       "name": "频道首页",
@@ -987,7 +900,12 @@
             }
           }
         }
-      ]
+      ],
+      "onlineCompare": {
+        "name": "线上页面",
+        "image": "assets/pages/online-page/default.png",
+        "note": "线上现状对照：期数宫格常驻展开、利率文案位置与新版不同"
+      }
     },
     {
       "id": "success-paid",
@@ -1406,17 +1324,6 @@
       },
       "event": "点击分期还款按钮",
       "type": "main"
-    },
-    {
-      "id": "e14",
-      "from": {
-        "pageId": "online-page"
-      },
-      "to": {
-        "pageId": "ir-repay-page"
-      },
-      "event": "线上页面动线进入",
-      "type": "branch"
     },
     {
       "id": "e15",

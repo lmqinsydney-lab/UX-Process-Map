@@ -150,13 +150,6 @@ export default function DetailPanel({ page, stateId, moduleId, onState, onSelect
           </button>
         </div>
         {editOpen && <ChatEditStub placeholder={`试试：把「${page.name}」的页面说明改成…`} />}
-        <div className="tabs">
-          {page.states.map((s) => (
-            <button key={s.id} className={`tab${s.id === stateId ? ' on' : ''}`} onClick={() => onState(s.id)}>
-              {s.name}
-            </button>
-          ))}
-        </div>
         <section>
           <h3>模块构成</h3>
           <div className="module-cards">
