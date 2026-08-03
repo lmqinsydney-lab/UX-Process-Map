@@ -71,9 +71,17 @@ export default function App() {
     [focusPage, zoomToPage],
   )
 
-  const onSelectModule = useCallback((moduleId: string | null) => {
-    setFocus((f) => (f ? { ...f, moduleId } : f))
-  }, [])
+  const onSelectModule = useCallback(
+    (moduleId: string | null) => {
+      setFocus((f) => (f ? { ...f, moduleId } : f))
+      // 选中模块时把视口拉回当前聚焦页面（用户可能已手动平移离开）
+      if (moduleId && focusRef.current) {
+        const pageId = focusRef.current.pageId
+        window.setTimeout(() => zoomToPage(pageId), 60)
+      }
+    },
+    [zoomToPage],
+  )
 
   const closeFocus = useCallback(() => {
     setFocus(null)
@@ -144,7 +152,7 @@ export default function App() {
             focus={focus}
             onClose={closeFocus}
             onGoPage={(pageId, moduleId) => focusPage(pageId, moduleId)}
-            onState={(stateId) =>
+            onState={(stateId) => {
               setFocus((f) => {
                 if (!f) return f
                 // 切换页面状态后，若选中模块在新状态下不展示，自动取消选中（对应面板卡片置灰）
@@ -153,7 +161,12 @@ export default function App() {
                   getPage(f.pageId).moduleInstances.some((i) => i.moduleId === f.moduleId && i.hotzones[stateId])
                 return { ...f, stateId, moduleId: keep ? f.moduleId : null }
               })
-            }
+              // 切换状态同样拉回聚焦页面视图（用户可能已手动平移离开）
+              if (focusRef.current) {
+                const pageId = focusRef.current.pageId
+                window.setTimeout(() => zoomToPage(pageId), 60)
+              }
+            }}
             onSelectModule={onSelectModule}
           />
         )}
