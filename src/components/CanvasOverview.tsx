@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Background, Controls, MiniMap, ReactFlow, type ReactFlowInstance } from '@xyflow/react'
+import { useEffect, useMemo } from 'react'
+import { Background, Controls, MiniMap, ReactFlow, useReactFlow, useStoreApi, type ReactFlowInstance } from '@xyflow/react'
 import { buildGraph, type FocusState, type GraphCallbacks } from '../layout'
 import ProcessGroupNode from './nodes/ProcessGroupNode'
 import PageCardNode from './nodes/PageCardNode'
@@ -22,6 +22,31 @@ export default function CanvasOverview(props: Props) {
     () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule }),
     [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule],
   )
+
+  // 兜底：部分内嵌浏览器环境 ResizeObserver 不触发，节点测量进不了 store，
+  // 所有连线会静默消失。挂载后若未初始化则手动喂一次 DOM 尺寸。
+  const storeApi = useStoreApi()
+  const rf = useReactFlow()
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const s = storeApi.getState() as unknown as {
+        nodesInitialized: boolean
+        domNode: HTMLElement | null
+        updateNodeInternals: (m: Map<string, { id: string; nodeElement: HTMLElement; force: boolean }>) => void
+      }
+      if (s.nodesInitialized || !s.domNode) return
+      const updates = new Map<string, { id: string; nodeElement: HTMLElement; force: boolean }>()
+      s.domNode.querySelectorAll<HTMLElement>('.react-flow__node').forEach((el) => {
+        const id = el.getAttribute('data-id')
+        if (id) updates.set(id, { id, nodeElement: el, force: true })
+      })
+      if (updates.size) {
+        s.updateNodeInternals(updates)
+        window.requestAnimationFrame(() => rf.fitView({ padding: 0.12 }))
+      }
+    }, 120)
+    return () => window.clearTimeout(t)
+  }, [storeApi, rf, graph])
 
   return (
     <ReactFlow

@@ -1,26 +1,38 @@
 import type { CSSProperties } from 'react'
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
 import { EDGE_COLOR, LANE_BASE, LANE_PITCH } from '../../layout'
-import { EDGE_TYPE_NAME, type FlowEdgeData } from '../../types/model'
+import { EDGE_TYPE_NAME, type EdgeType } from '../../types/model'
+
+interface EdgeItem {
+  fromLabel: string
+  toLabel: string
+  event: string
+  condition?: string
+  type: EdgeType
+}
 
 interface FlowEdgeDataProps {
-  edge: FlowEdgeData
-  kind: 'loop' | 'back' | 'long' | 'short'
+  kind: 'loop' | 'back' | 'long' | 'short' | 'gshort' | 'glong'
   lane: number
   srcShift: number
   tgtShift: number
+  srcYOff: number
+  tgtYOff: number
   upHops: number[]
   downHops: number[]
   open: boolean
-  fromLabel: string
-  toLabel: string
+  label: string
+  typeKey: EdgeType
+  items: EdgeItem[]
   onOpenEdge: (edgeId: string | null) => void
 }
 
 export default function FlowEdge(props: EdgeProps) {
-  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd } = props
-  const { edge, kind, lane, srcShift, tgtShift, upHops, downHops, open, fromLabel, toLabel, onOpenEdge } =
+  const { sourceX, targetX, sourcePosition, targetPosition, markerEnd } = props
+  const { kind, lane, srcShift, tgtShift, srcYOff, tgtYOff, upHops, downHops, open, label, typeKey, items, onOpenEdge } =
     props.data as unknown as FlowEdgeDataProps
+  const sourceY = props.sourceY + srcYOff
+  const targetY = props.targetY + tgtYOff
 
   let path: string
   let labelX: number
@@ -36,8 +48,8 @@ export default function FlowEdge(props: EdgeProps) {
     path = `M ${sourceX} ${sourceY} C ${sourceX} ${dip}, ${targetX} ${dip}, ${targetX} ${targetY}`
     labelX = (sourceX + targetX) / 2
     labelY = dip - 16
-  } else if (kind === 'long') {
-    // 长距离连线走正交路径：卡片间隙垂直上升 → 顶部专属泳道横穿 → 目标间隙垂直下降；
+  } else if (kind === 'long' || kind === 'glong') {
+    // 长距离连线走正交路径：间隙垂直上升 → 顶部专属泳道横穿 → 目标间隙垂直下降；
     // 垂直段与更低泳道相交处画跨线桥（小弧跳过）
     const r = 8
     const hr = 7
@@ -60,11 +72,11 @@ export default function FlowEdge(props: EdgeProps) {
     ;[path, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
   }
 
-  const color = EDGE_COLOR[edge.type]
+  const color = EDGE_COLOR[typeKey]
   const style: CSSProperties = {
     stroke: color,
-    strokeWidth: edge.type === 'main' ? 2.2 : 1.5,
-    strokeDasharray: edge.type === 'error' ? '7 5' : edge.type === 'back' ? '4 4' : undefined,
+    strokeWidth: typeKey === 'main' ? 2.2 : 1.5,
+    strokeDasharray: typeKey === 'error' ? '7 5' : typeKey === 'back' ? '4 4' : undefined,
   }
 
   return (
@@ -72,15 +84,15 @@ export default function FlowEdge(props: EdgeProps) {
       <BaseEdge id={props.id} path={path} style={style} markerEnd={markerEnd} />
       <EdgeLabelRenderer>
         <div
-          className={`edge-label${kind === 'short' ? ' wrap' : ''} et-${edge.type} nodrag nopan`}
+          className={`edge-label${kind === 'short' || kind === 'gshort' ? ' wrap' : ''} et-${typeKey} nodrag nopan`}
           style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
           onClick={(ev) => {
             ev.stopPropagation()
-            onOpenEdge(open ? null : edge.id)
+            onOpenEdge(open ? null : props.id)
           }}
           title="点击查看触发事件与判断条件"
         >
-          {edge.event}
+          {label}
         </div>
         {open && (
           <div
@@ -89,27 +101,34 @@ export default function FlowEdge(props: EdgeProps) {
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="ep-row ep-head">
-              <span className={`ep-type et-${edge.type}`}>{EDGE_TYPE_NAME[edge.type]}</span>
+              <span className={`ep-type et-${typeKey}`}>
+                {items.length > 1 ? `${items.length} 条流转` : EDGE_TYPE_NAME[typeKey]}
+              </span>
               <button className="ep-close" onClick={() => onOpenEdge(null)}>
                 ✕
               </button>
             </div>
-            <div className="ep-row">
-              <span className="ep-k">流向</span>
-              <span className="ep-v">
-                {fromLabel} → {toLabel}
-              </span>
-            </div>
-            <div className="ep-row">
-              <span className="ep-k">触发事件</span>
-              <span className="ep-v">{edge.event}</span>
-            </div>
-            {edge.condition && (
-              <div className="ep-row">
-                <span className="ep-k">判断条件</span>
-                <span className="ep-v">{edge.condition}</span>
+            {items.map((it, i) => (
+              <div key={i} className={`ep-item${i > 0 ? ' ep-item-sep' : ''}`}>
+                <div className="ep-row">
+                  <span className="ep-k">流向</span>
+                  <span className="ep-v">
+                    {it.fromLabel} → {it.toLabel}
+                    {items.length > 1 && <span className={`ep-type ep-type-sm et-${it.type}`}>{EDGE_TYPE_NAME[it.type]}</span>}
+                  </span>
+                </div>
+                <div className="ep-row">
+                  <span className="ep-k">触发事件</span>
+                  <span className="ep-v">{it.event}</span>
+                </div>
+                {it.condition && (
+                  <div className="ep-row">
+                    <span className="ep-k">判断条件</span>
+                    <span className="ep-v">{it.condition}</span>
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </div>
         )}
       </EdgeLabelRenderer>

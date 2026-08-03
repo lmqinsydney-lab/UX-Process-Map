@@ -48,12 +48,14 @@ export function buildGraph(
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const pagePos = new Map<string, { left: number; right: number }>()
+  const groupPos = new Map<string, { left: number; right: number }>()
   let cursorX = 0
 
   for (const pn of project.processNodes) {
     const pages = project.pages.filter((p) => p.processNodeId === pn.id)
     const width = GROUP_PAD_X * 2 + pages.length * CARD_W + (pages.length - 1) * CARD_GAP
     const height = GROUP_PAD_TOP + CARD_H + GROUP_PAD_BOTTOM
+    groupPos.set(pn.id, { left: cursorX, right: cursorX + width })
 
     nodes.push({
       id: `g:${pn.id}`,
@@ -98,6 +100,10 @@ export function buildGraph(
   }
 
   const all = canvasEdges()
+  const pageGroup = new Map(project.pages.map((p) => [p.id, p.processNodeId]))
+  /** 流程内页面级连线；跨流程连线聚合为分组级单箭头 */
+  const intra = all.filter((e) => pageGroup.get(e.from.pageId) === pageGroup.get(e.to.pageId))
+  const cross = all.filter((e) => pageGroup.get(e.from.pageId) !== pageGroup.get(e.to.pageId))
 
   const kindOf = (e: (typeof all)[number]): 'loop' | 'back' | 'long' | 'short' => {
     if (e.from.pageId === e.to.pageId) return 'loop'
@@ -125,13 +131,39 @@ export function buildGraph(
     return out
   }
 
-  const longEdges = all.filter((e) => kindOf(e) === 'long')
+  // ---------- 跨流程连线聚合为分组级单箭头 ----------
+  interface Agg {
+    id: string
+    fromG: string
+    toG: string
+    members: typeof cross
+    kind: 'gshort' | 'glong'
+  }
+  const aggMap = new Map<string, Agg>()
+  for (const e of cross) {
+    const fromG = pageGroup.get(e.from.pageId)!
+    const toG = pageGroup.get(e.to.pageId)!
+    const id = `agg:${fromG}->${toG}`
+    if (!aggMap.has(id)) {
+      const gap = groupPos.get(toG)!.left - groupPos.get(fromG)!.right
+      aggMap.set(id, { id, fromG, toG, members: [], kind: gap > 260 ? 'glong' : 'gshort' })
+    }
+    aggMap.get(id)!.members.push(e)
+  }
+  const aggs = [...aggMap.values()]
+
+  const longEdges = intra.filter((e) => kindOf(e) === 'long')
   const longLanes = assignLanes(
-    longEdges.map((e) => ({ id: e.id, start: pagePos.get(e.from.pageId)!.right, end: pagePos.get(e.to.pageId)!.left })),
+    [
+      ...longEdges.map((e) => ({ id: e.id, start: pagePos.get(e.from.pageId)!.right, end: pagePos.get(e.to.pageId)!.left })),
+      ...aggs
+        .filter((a) => a.kind === 'glong')
+        .map((a) => ({ id: a.id, start: groupPos.get(a.fromG)!.right, end: groupPos.get(a.toG)!.left })),
+    ],
     40,
   )
   const backLanes = assignLanes(
-    all
+    intra
       .filter((e) => kindOf(e) === 'back')
       .map((e) => {
         const a = pagePos.get(e.from.pageId)!
@@ -141,8 +173,7 @@ export function buildGraph(
     40,
   )
 
-  // 同源/同目标的升降段错位：泳道越高的线，升段越靠左 / 降段越靠右，
-  // 避免爬向高泳道时穿过同组低泳道线的水平段
+  // 同源/同目标的升降段错位：泳道越高的线，升段越靠左 / 降段越靠右
   const srcShifts: Record<string, number> = {}
   const tgtShifts: Record<string, number> = {}
   const byKey = (key: (e: (typeof all)[number]) => string, shifts: Record<string, number>) => {
@@ -160,54 +191,121 @@ export function buildGraph(
   byKey((e) => e.from.pageId, srcShifts)
   byKey((e) => e.to.pageId, tgtShifts)
 
-  // 无法靠排层消除的交叉（升降段穿过更低泳道的水平段）→ 记录交叉点，渲染成跨线桥
-  const geo = new Map(
-    longEdges.map((e) => [
-      e.id,
-      {
-        upX: pagePos.get(e.from.pageId)!.right + 8 + srcShifts[e.id],
-        downX: pagePos.get(e.to.pageId)!.left - 8 - tgtShifts[e.id],
-        laneY: -(LANE_BASE + longLanes[e.id] * LANE_PITCH),
-      },
-    ]),
-  )
-  const hopsAt = (x: number, laneY: number) =>
-    longEdges
-      .filter((b) => {
-        const g = geo.get(b.id)!
-        return g.laneY > laneY && g.upX + 6 < x && x < g.downX - 6
-      })
-      .map((b) => geo.get(b.id)!.laneY)
+  // 分组多进/多出时，箭头在分组边缘做垂直错位
+  const aggSrcY: Record<string, number> = {}
+  const aggTgtY: Record<string, number> = {}
+  const spread = (lists: Map<string, Agg[]>, out: Record<string, number>) => {
+    for (const list of lists.values()) list.forEach((a, i) => (out[a.id] = (i - (list.length - 1) / 2) * 30))
+  }
+  const outByG = new Map<string, Agg[]>()
+  const inByG = new Map<string, Agg[]>()
+  for (const a of aggs) {
+    if (!outByG.has(a.fromG)) outByG.set(a.fromG, [])
+    outByG.get(a.fromG)!.push(a)
+    if (!inByG.has(a.toG)) inByG.set(a.toG, [])
+    inByG.get(a.toG)!.push(a)
+  }
+  spread(outByG, aggSrcY)
+  spread(inByG, aggTgtY)
 
-  const edges: Edge[] = all.map((e) => {
-    const kind = kindOf(e)
-    const srcShift = kind === 'long' ? srcShifts[e.id] : 0
-    const tgtShift = kind === 'long' ? tgtShifts[e.id] : 0
-    const g = kind === 'long' ? geo.get(e.id)! : null
-    return {
-      id: e.id,
-      source: e.from.pageId,
-      target: e.to.pageId,
-      type: 'flow',
-      zIndex: 0,
-      sourceHandle: kind === 'loop' ? 'ts' : kind === 'back' ? 'bs' : 'r',
-      targetHandle: kind === 'loop' ? 'tt' : kind === 'back' ? 'bt' : 'l',
-      markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: EDGE_COLOR[e.type] },
-      data: {
-        edge: e,
-        kind,
-        lane: kind === 'long' ? longLanes[e.id] : kind === 'back' ? backLanes[e.id] : 0,
-        srcShift,
-        tgtShift,
-        upHops: g ? hopsAt(g.upX, g.laneY) : [],
-        downHops: g ? hopsAt(g.downX, g.laneY) : [],
-        open: openEdgeId === e.id,
-        fromLabel: endpointLabel(e.from),
-        toLabel: endpointLabel(e.to),
-        onOpenEdge: cb.onOpenEdge,
-      },
-    }
+  // 无法靠排层消除的交叉（升降段穿过更低泳道的水平段）→ 记录交叉点，渲染成跨线桥
+  const geo = new Map<string, { upX: number; downX: number; laneY: number }>()
+  for (const e of longEdges) {
+    geo.set(e.id, {
+      upX: pagePos.get(e.from.pageId)!.right + 8 + srcShifts[e.id],
+      downX: pagePos.get(e.to.pageId)!.left - 8 - tgtShifts[e.id],
+      laneY: -(LANE_BASE + longLanes[e.id] * LANE_PITCH),
+    })
+  }
+  for (const a of aggs) {
+    if (a.kind !== 'glong') continue
+    geo.set(a.id, {
+      upX: groupPos.get(a.fromG)!.right + 8,
+      downX: groupPos.get(a.toG)!.left - 8,
+      laneY: -(LANE_BASE + longLanes[a.id] * LANE_PITCH),
+    })
+  }
+  const geoList = [...geo.values()]
+  const hopsAt = (x: number, laneY: number) =>
+    geoList.filter((g) => g.laneY > laneY && g.upX + 6 < x && x < g.downX - 6).map((g) => g.laneY)
+
+  const toItem = (e: (typeof all)[number]) => ({
+    fromLabel: endpointLabel(e.from),
+    toLabel: endpointLabel(e.to),
+    event: e.event,
+    condition: e.condition,
+    type: e.type,
   })
+  const marker = (t: EdgeType) => ({ type: MarkerType.ArrowClosed, width: 18, height: 18, color: EDGE_COLOR[t] })
+  const typeRank: EdgeType[] = ['main', 'branch', 'error', 'back']
+
+  const edges: Edge[] = [
+    ...intra.map((e) => {
+      const kind = kindOf(e)
+      const g = kind === 'long' ? geo.get(e.id)! : null
+      return {
+        id: e.id,
+        source: e.from.pageId,
+        target: e.to.pageId,
+        type: 'flow',
+        zIndex: 0,
+        sourceHandle: kind === 'loop' ? 'ts' : kind === 'back' ? 'bs' : 'r',
+        targetHandle: kind === 'loop' ? 'tt' : kind === 'back' ? 'bt' : 'l',
+        markerEnd: marker(e.type),
+        data: {
+          kind,
+          lane: kind === 'long' ? longLanes[e.id] : kind === 'back' ? backLanes[e.id] : 0,
+          srcShift: kind === 'long' ? srcShifts[e.id] : 0,
+          tgtShift: kind === 'long' ? tgtShifts[e.id] : 0,
+          srcYOff: 0,
+          tgtYOff: 0,
+          upHops: g ? hopsAt(g.upX, g.laneY) : [],
+          downHops: g ? hopsAt(g.downX, g.laneY) : [],
+          open: openEdgeId === e.id,
+          label: e.event,
+          typeKey: e.type,
+          items: [toItem(e)],
+          onOpenEdge: cb.onOpenEdge,
+        },
+      }
+    }),
+    ...aggs.map((a) => {
+      const typeKey = typeRank.find((t) => a.members.some((m) => m.type === t))!
+      const events = [...new Set(a.members.map((m) => m.event))]
+      const label =
+        events.length === 1
+          ? a.members.length > 1
+            ? `${events[0]} ×${a.members.length}`
+            : events[0]
+          : `${a.members.length} 条流转`
+      const g = a.kind === 'glong' ? geo.get(a.id)! : null
+      return {
+        id: a.id,
+        source: `g:${a.fromG}`,
+        target: `g:${a.toG}`,
+        type: 'flow',
+        zIndex: 0,
+        sourceHandle: 'gr',
+        targetHandle: 'gl',
+        markerEnd: marker(typeKey),
+        data: {
+          kind: a.kind,
+          lane: a.kind === 'glong' ? longLanes[a.id] : 0,
+          srcShift: 0,
+          tgtShift: 0,
+          srcYOff: aggSrcY[a.id] ?? 0,
+          tgtYOff: aggTgtY[a.id] ?? 0,
+          upHops: g ? hopsAt(g.upX, g.laneY) : [],
+          downHops: g ? hopsAt(g.downX, g.laneY) : [],
+          open: openEdgeId === a.id,
+          label,
+          typeKey,
+          items: a.members.map(toItem),
+          onOpenEdge: cb.onOpenEdge,
+        },
+      }
+    }),
+  ]
 
   return { nodes, edges }
 }

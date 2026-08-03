@@ -125,6 +125,8 @@ button { font-family: inherit; cursor: pointer; }
 .ep-close { border: none; background: none; color: #9ca3af; font-size: 12px; }
 .ep-k { flex-shrink: 0; color: #9ca3af; }
 .ep-v { color: #374151; }
+.ep-item-sep { border-top: 1px solid #f0f1f4; margin-top: 8px; padding-top: 2px; }
+.ep-type-sm { font-size: 10px; padding: 0 6px; margin-left: 6px; border: 1px solid; border-radius: 999px; }
 
 /* ---------- 画布内聚焦 ---------- */
 .page-card.focused { cursor: default; border-color: #4f46e5; box-shadow: 0 8px 32px rgba(79, 70, 229, 0.18); }
