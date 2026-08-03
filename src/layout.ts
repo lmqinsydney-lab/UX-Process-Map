@@ -9,6 +9,7 @@ const GROUP_PAD_X = 24
 const GROUP_PAD_TOP = 58
 const GROUP_PAD_BOTTOM = 30
 const CARD_GAP = 132
+const NARROW_GAP = 36
 const GROUP_GAP = 160
 
 export const EDGE_COLOR: Record<EdgeType, string> = {
@@ -38,6 +39,8 @@ export interface GraphCallbacks {
   onToggleExpand: (pageId: string) => void
   onOpenEdge: (edgeId: string | null) => void
   onSelectModule: (moduleId: string | null) => void
+  /** 双击带点击事件的模块热区 → 沿 clickEdgeId 定位到目标页面 */
+  onJumpEdge: (edgeId: string) => void
 }
 
 export function buildGraph(
@@ -51,10 +54,23 @@ export function buildGraph(
   const groupPos = new Map<string, { left: number; right: number }>()
   let cursorX = 0
 
+  // 相邻页面之间存在流转边才需要给连线留宽间距，否则用窄间距
+  const hasEdgeBetween = (a: string, b: string) =>
+    project.edges.some(
+      (e) => (e.from.pageId === a && e.to.pageId === b) || (e.from.pageId === b && e.to.pageId === a),
+    )
+
   for (const pn of project.processNodes) {
     const pages = project.pages.filter((p) => p.processNodeId === pn.id)
-    const width = GROUP_PAD_X * 2 + pages.length * CARD_W + (pages.length - 1) * CARD_GAP
     const height = GROUP_PAD_TOP + CARD_H + GROUP_PAD_BOTTOM
+    let innerX = GROUP_PAD_X
+    const xs: number[] = []
+    pages.forEach((page, i) => {
+      if (i > 0) innerX += hasEdgeBetween(pages[i - 1].id, page.id) ? CARD_GAP : NARROW_GAP
+      xs.push(innerX)
+      innerX += CARD_W
+    })
+    const width = innerX + GROUP_PAD_X
     groupPos.set(pn.id, { left: cursorX, right: cursorX + width })
 
     nodes.push({
@@ -71,13 +87,13 @@ export function buildGraph(
     })
 
     pages.forEach((page, i) => {
-      const left = cursorX + GROUP_PAD_X + i * (CARD_W + CARD_GAP)
+      const left = cursorX + xs[i]
       pagePos.set(page.id, { left, right: left + CARD_W })
       nodes.push({
         id: page.id,
         type: 'pageCard',
         parentId: `g:${pn.id}`,
-        position: { x: GROUP_PAD_X + i * (CARD_W + CARD_GAP), y: GROUP_PAD_TOP },
+        position: { x: xs[i], y: GROUP_PAD_TOP },
         width: CARD_W,
         height: CARD_H,
         data: {
@@ -89,6 +105,7 @@ export function buildGraph(
           isFocused: focus?.pageId === page.id,
           onToggle: cb.onToggleExpand,
           onSelectModule: cb.onSelectModule,
+          onJumpEdge: cb.onJumpEdge,
         },
         draggable: false,
         selectable: false,

@@ -43,14 +43,14 @@ export default function App() {
   }, [])
 
   const focusPage = useCallback(
-    (pageId: string, moduleId?: string) => {
+    (pageId: string, moduleId?: string, stateId?: string) => {
       const page = getPage(pageId)
       const stateWithModule = moduleId
         ? page.states.find((s) => page.moduleInstances.some((i) => i.moduleId === moduleId && i.hotzones[s.id]))?.id
         : undefined
       setFocus({
         pageId,
-        stateId: stateWithModule ?? page.states[0].id,
+        stateId: stateId ?? stateWithModule ?? page.states[0].id,
         moduleId: moduleId ?? null,
       })
       // 等 React 提交后再推近视口；再补一次防止首次聚焦时序竞争
@@ -128,6 +128,10 @@ export default function App() {
             onOpenPage={onOpenPage}
             onToggleExpand={onToggleExpand}
             onOpenEdge={setOpenEdgeId}
+            onJumpEdge={(edgeId) => {
+              const e = project.edges.find((x) => x.id === edgeId)
+              if (e) focusPage(e.to.pageId, undefined, e.to.stateId)
+            }}
             onSelectModule={onSelectModule}
             onInit={(inst) => {
               rfRef.current = inst

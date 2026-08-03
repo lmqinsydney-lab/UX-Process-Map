@@ -16,11 +16,11 @@ interface Props extends GraphCallbacks {
 }
 
 export default function CanvasOverview(props: Props) {
-  const { expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onInit } = props
+  const { expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge, onInit } = props
 
   const graph = useMemo(
-    () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule }),
-    [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule],
+    () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge }),
+    [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge],
   )
 
   // 兜底：部分内嵌浏览器环境 ResizeObserver 不触发，节点测量进不了 store，
@@ -62,6 +62,7 @@ export default function CanvasOverview(props: Props) {
       panOnScroll
       zoomOnScroll={false}
       zoomOnPinch
+      zoomOnDoubleClick={false}
       nodesDraggable={false}
       nodesConnectable={false}
       elementsSelectable={false}

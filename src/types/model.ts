@@ -30,6 +30,8 @@ export interface ModuleInstance {
   instanceNote?: string
   /** 展示条件说明（如「仅期数收起时展示」）；模块在部分页面状态不展示时填写 */
   visibleWhen?: string
+  /** 模块点击事件对应的流转边 id；聚焦态双击热区自动定位到该边的目标页面 */
+  clickEdgeId?: string
   /** key = 页面状态 id；某状态无此模块则不配 */
   hotzones: Record<string, Hotzone>
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { asset } from '../../assetUrl'
-import { getModule } from '../../data/loader'
+import { endpointLabel, getEdge, getModule } from '../../data/loader'
 import { EDGE_COLOR } from '../../layout'
 import type { FlowEdgeData, Page } from '../../types/model'
 
@@ -14,6 +14,7 @@ interface PageCardData {
   focusModuleId: string | null
   onToggle: (pageId: string) => void
   onSelectModule: (moduleId: string | null) => void
+  onJumpEdge: (edgeId: string) => void
 }
 
 const SW = 150
@@ -94,7 +95,7 @@ function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[
 }
 
 /** 聚焦态：完整截图 + 模块热区 + 聚光灯蒙层，直接绘制在画布节点内 */
-function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page; stateId: string; moduleId: string | null; onSelectModule: (m: string | null) => void }) {
+function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: { page: Page; stateId: string; moduleId: string | null; onSelectModule: (m: string | null) => void; onJumpEdge: (edgeId: string) => void }) {
   const state = page.states.find((s) => s.id === stateId) ?? page.states[0]
   const zones = page.moduleInstances.filter((i) => i.hotzones[state.id])
   const selected = moduleId ? zones.find((z) => z.moduleId === moduleId) : undefined
@@ -121,15 +122,24 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
         {zones.map((z) => {
           const zone = z.hotzones[state.id]
           const isSel = z.moduleId === moduleId
+          const clickEdge = z.clickEdgeId ? getEdge(z.clickEdgeId) : undefined
           return (
             <div
               key={z.moduleId}
-              className={`hz${isSel ? ' sel' : ''}`}
+              className={`hz${isSel ? ' sel' : ''}${clickEdge ? ' jumpable' : ''}`}
               style={{ left: `${zone.x}%`, top: `${zone.y}%`, width: `${zone.w}%`, height: `${zone.h}%` }}
-              title={getModule(z.moduleId).name}
+              title={
+                clickEdge
+                  ? `${getModule(z.moduleId).name} · 双击前往「${endpointLabel(clickEdge.to)}」`
+                  : getModule(z.moduleId).name
+              }
               onClick={(e) => {
                 e.stopPropagation()
                 onSelectModule(isSel ? null : z.moduleId)
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                if (clickEdge) onJumpEdge(clickEdge.id)
               }}
             />
           )
@@ -140,7 +150,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule }: { page: Page
 }
 
 export default function PageCardNode(props: NodeProps) {
-  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule } =
+  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule, onJumpEdge } =
     props.data as unknown as PageCardData
   const [compareOpen, setCompareOpen] = useState(false)
 
@@ -157,7 +167,7 @@ export default function PageCardNode(props: NodeProps) {
           {page.name}
         </div>
         {isFocused ? (
-          <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} onSelectModule={onSelectModule} />
+          <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} onSelectModule={onSelectModule} onJumpEdge={onJumpEdge} />
         ) : (
           <div className="page-thumb-box">
             <img className="page-thumb" src={asset(page.states[0].image)} draggable={false} alt={page.name} />

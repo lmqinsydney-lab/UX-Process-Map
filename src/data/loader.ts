@@ -15,6 +15,10 @@ export function getModule(id: string): ModuleDef {
   return mod
 }
 
+export function getEdge(id: string): FlowEdgeData | undefined {
+  return project.edges.find((e) => e.id === id)
+}
+
 export function getProcessNode(id: string): ProcessNode {
   const node = project.processNodes.find((n) => n.id === id)
   if (!node) throw new Error(`unknown process node: ${id}`)
