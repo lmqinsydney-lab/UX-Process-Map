@@ -15,20 +15,30 @@ interface PageCardData {
   onToggle: (pageId: string) => void
   onSelectModule: (moduleId: string | null) => void
   onJumpEdge: (edgeId: string) => void
+  onPickState: (pageId: string, stateId: string) => void
 }
 
 const SW = 150
 const SG = 14
 const STH = 352
 
-function StateTray({ page, stateEdges }: { page: Page; stateEdges: FlowEdgeData[] }) {
+function StateTray({ page, stateEdges, onPickState }: { page: Page; stateEdges: FlowEdgeData[]; onPickState: (pageId: string, stateId: string) => void }) {
   const idx = (stateId?: string) => page.states.findIndex((s) => s.id === stateId)
   const trayW = page.states.length * (SW + SG) - SG + 24
   return (
     <div className="state-tray nodrag" style={{ width: trayW }}>
       <div className="tray-cards">
         {page.states.map((s) => (
-          <div key={s.id} className="state-card" style={{ width: SW }}>
+          <div
+            key={s.id}
+            className="state-card"
+            style={{ width: SW }}
+            title={`聚焦查看「${s.name}」`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onPickState(page.id, s.id)
+            }}
+          >
             <div className="state-card-name" title={s.name}>
               {s.name}
             </div>
@@ -150,7 +160,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
 }
 
 export default function PageCardNode(props: NodeProps) {
-  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule, onJumpEdge } =
+  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule, onJumpEdge, onPickState } =
     props.data as unknown as PageCardData
   const [compareOpen, setCompareOpen] = useState(false)
 
@@ -203,7 +213,7 @@ export default function PageCardNode(props: NodeProps) {
           {page.onlineCompare.note && <div className="oc-note">{page.onlineCompare.note}</div>}
         </div>
       )}
-      {expanded && <StateTray page={page} stateEdges={stateEdges} />}
+      {expanded && <StateTray page={page} stateEdges={stateEdges} onPickState={onPickState} />}
     </div>
   )
 }

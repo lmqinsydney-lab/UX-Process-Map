@@ -41,6 +41,8 @@ export interface GraphCallbacks {
   onSelectModule: (moduleId: string | null) => void
   /** 双击带点击事件的模块热区 → 沿 clickEdgeId 定位到目标页面 */
   onJumpEdge: (edgeId: string) => void
+  /** 点击状态托盘中的状态卡片 → 聚焦到该页面的该状态 */
+  onPickState: (pageId: string, stateId: string) => void
 }
 
 export function buildGraph(
@@ -106,6 +108,7 @@ export function buildGraph(
           onToggle: cb.onToggleExpand,
           onSelectModule: cb.onSelectModule,
           onJumpEdge: cb.onJumpEdge,
+          onPickState: cb.onPickState,
         },
         draggable: false,
         selectable: false,

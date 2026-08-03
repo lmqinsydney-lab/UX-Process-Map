@@ -16,11 +16,11 @@ interface Props extends GraphCallbacks {
 }
 
 export default function CanvasOverview(props: Props) {
-  const { expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge, onInit } = props
+  const { expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge, onPickState, onInit } = props
 
   const graph = useMemo(
-    () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge }),
-    [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge],
+    () => buildGraph(expanded, openEdgeId, focus, { onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge, onPickState }),
+    [expanded, openEdgeId, focus, onOpenPage, onToggleExpand, onOpenEdge, onSelectModule, onJumpEdge, onPickState],
   )
 
   // 兜底：部分内嵌浏览器环境 ResizeObserver 不触发，节点测量进不了 store，

@@ -140,6 +140,7 @@ export default function App() {
               const e = project.edges.find((x) => x.id === edgeId)
               if (e) focusPage(e.to.pageId, undefined, e.to.stateId)
             }}
+            onPickState={(pageId, stateId) => focusPage(pageId, undefined, stateId)}
             onSelectModule={onSelectModule}
             onInit={(inst) => {
               rfRef.current = inst

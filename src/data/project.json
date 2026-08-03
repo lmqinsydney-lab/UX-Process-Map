@@ -920,22 +920,36 @@
       }
     },
     {
-      "id": "success-paid",
+      "id": "success-page",
       "processNodeId": "result",
-      "name": "分期成功（已还清）",
-      "desc": "分期成功结果页：本期已还清。",
+      "name": "分期成功",
+      "desc": "分期成功结果页：结清状态由剩余待还金额决定——已还清仅展示分期详情；未还清额外展示剩余本期应还金额与继续还款入口。",
       "states": [
         {
-          "id": "default",
-          "name": "默认",
-          "image": "assets/pages/success-paid/default.png"
+          "id": "paid",
+          "name": "已还清",
+          "image": "assets/pages/success-paid/default.png",
+          "note": "本月账单已结清"
+        },
+        {
+          "id": "unpaid",
+          "name": "未还清",
+          "image": "assets/pages/success-unpaid/default.png",
+          "note": "本月账单还剩待结清金额，展示剩余应还卡片"
         }
       ],
       "moduleInstances": [
         {
           "moduleId": "result-feedback",
+          "instanceNote": "副标题随结清状态变化：已结清 / 还剩x元待结清",
           "hotzones": {
-            "default": {
+            "paid": {
+              "x": 4,
+              "y": 11.5,
+              "w": 92,
+              "h": 8
+            },
+            "unpaid": {
               "x": 4,
               "y": 11.5,
               "w": 92,
@@ -946,57 +960,13 @@
         {
           "moduleId": "summary-card",
           "hotzones": {
-            "default": {
+            "paid": {
               "x": 4,
               "y": 20.5,
               "w": 92,
               "h": 25
-            }
-          }
-        },
-        {
-          "moduleId": "action-buttons",
-          "instanceNote": "返回首页",
-          "hotzones": {
-            "default": {
-              "x": 64,
-              "y": 91,
-              "w": 29,
-              "h": 5
-            }
-          },
-          "clickEdgeId": "e21"
-        }
-      ]
-    },
-    {
-      "id": "success-unpaid",
-      "processNodeId": "result",
-      "name": "分期成功（未还清）",
-      "desc": "分期成功结果页：仍有待还；分期详情内新增分期优惠减免金额，下方展示剩余本期应还与继续还款入口。",
-      "states": [
-        {
-          "id": "default",
-          "name": "默认",
-          "image": "assets/pages/success-unpaid/default.png"
-        }
-      ],
-      "moduleInstances": [
-        {
-          "moduleId": "result-feedback",
-          "hotzones": {
-            "default": {
-              "x": 4,
-              "y": 11.5,
-              "w": 92,
-              "h": 8
-            }
-          }
-        },
-        {
-          "moduleId": "summary-card",
-          "hotzones": {
-            "default": {
+            },
+            "unpaid": {
               "x": 4,
               "y": 20.5,
               "w": 92,
@@ -1006,9 +976,15 @@
         },
         {
           "moduleId": "coupon-deduction",
-          "instanceNote": "新增：分期优惠 -3.00 元",
+          "instanceNote": "新增：分期优惠 -3.00 元（分期详情内）",
           "hotzones": {
-            "default": {
+            "paid": {
+              "x": 8,
+              "y": 32,
+              "w": 84,
+              "h": 3.6
+            },
+            "unpaid": {
               "x": 8,
               "y": 32,
               "w": 84,
@@ -1018,9 +994,10 @@
         },
         {
           "moduleId": "amount-display",
+          "visibleWhen": "仅未还清状态展示",
           "instanceNote": "剩余本期应还金额 8.00 元 + 继续还款按钮",
           "hotzones": {
-            "default": {
+            "unpaid": {
               "x": 4,
               "y": 46,
               "w": 92,
@@ -1031,15 +1008,21 @@
         {
           "moduleId": "action-buttons",
           "instanceNote": "返回首页",
+          "clickEdgeId": "e21",
           "hotzones": {
-            "default": {
+            "paid": {
+              "x": 64,
+              "y": 91,
+              "w": 29,
+              "h": 5
+            },
+            "unpaid": {
               "x": 64,
               "y": 91,
               "w": 29,
               "h": 5
             }
-          },
-          "clickEdgeId": "e22"
+          }
         }
       ]
     },
@@ -1300,7 +1283,8 @@
         "pageId": "repay-page"
       },
       "to": {
-        "pageId": "success-paid"
+        "pageId": "success-page",
+        "stateId": "paid"
       },
       "event": "点击确认分期按钮",
       "condition": "支付成功且本期已还清",
@@ -1312,7 +1296,8 @@
         "pageId": "repay-page"
       },
       "to": {
-        "pageId": "success-unpaid"
+        "pageId": "success-page",
+        "stateId": "unpaid"
       },
       "event": "点击确认分期按钮",
       "condition": "支付成功且仍有待还（部分分期）",
@@ -1347,7 +1332,8 @@
         "pageId": "ir-repay-page"
       },
       "to": {
-        "pageId": "success-paid"
+        "pageId": "success-page",
+        "stateId": "paid"
       },
       "event": "点击确认分期按钮",
       "condition": "支付成功且本期已还清",
@@ -1359,7 +1345,8 @@
         "pageId": "ir-repay-page"
       },
       "to": {
-        "pageId": "success-unpaid"
+        "pageId": "success-page",
+        "stateId": "unpaid"
       },
       "event": "点击确认分期按钮",
       "condition": "支付成功且仍有待还",
@@ -1402,18 +1389,7 @@
     {
       "id": "e21",
       "from": {
-        "pageId": "success-paid"
-      },
-      "to": {
-        "pageId": "channel-home"
-      },
-      "event": "点击返回首页按钮",
-      "type": "back"
-    },
-    {
-      "id": "e22",
-      "from": {
-        "pageId": "success-unpaid"
+        "pageId": "success-page"
       },
       "to": {
         "pageId": "channel-home"
