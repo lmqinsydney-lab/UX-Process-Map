@@ -154,7 +154,7 @@ export function buildGraph(
     fromG: string
     toG: string
     members: typeof cross
-    kind: 'gshort' | 'glong'
+    kind: 'gshort' | 'glong' | 'gback'
   }
   const aggMap = new Map<string, Agg>()
   for (const e of cross) {
@@ -163,7 +163,8 @@ export function buildGraph(
     const id = `agg:${fromG}->${toG}`
     if (!aggMap.has(id)) {
       const gap = groupPos.get(toG)!.left - groupPos.get(fromG)!.right
-      aggMap.set(id, { id, fromG, toG, members: [], kind: gap > 260 ? 'glong' : 'gshort' })
+      // 目标流程在源流程左侧 → 反向聚合边，沿分组下方回勾
+      aggMap.set(id, { id, fromG, toG, members: [], kind: gap < 0 ? 'gback' : gap > 260 ? 'glong' : 'gshort' })
     }
     aggMap.get(id)!.members.push(e)
   }
@@ -180,13 +181,22 @@ export function buildGraph(
     40,
   )
   const backLanes = assignLanes(
-    intra
-      .filter((e) => kindOf(e) === 'back')
-      .map((e) => {
-        const a = pagePos.get(e.from.pageId)!
-        const b = pagePos.get(e.to.pageId)!
-        return { id: e.id, start: Math.min(a.left, b.left), end: Math.max(a.right, b.right) }
-      }),
+    [
+      ...intra
+        .filter((e) => kindOf(e) === 'back')
+        .map((e) => {
+          const a = pagePos.get(e.from.pageId)!
+          const b = pagePos.get(e.to.pageId)!
+          return { id: e.id, start: Math.min(a.left, b.left), end: Math.max(a.right, b.right) }
+        }),
+      ...aggs
+        .filter((a) => a.kind === 'gback')
+        .map((a) => {
+          const f = groupPos.get(a.fromG)!
+          const t = groupPos.get(a.toG)!
+          return { id: a.id, start: Math.min(f.left, t.left), end: Math.max(f.right, t.right) }
+        }),
+    ],
     40,
   )
 
@@ -302,12 +312,12 @@ export function buildGraph(
         target: `g:${a.toG}`,
         type: 'flow',
         zIndex: 0,
-        sourceHandle: 'gr',
-        targetHandle: 'gl',
+        sourceHandle: a.kind === 'gback' ? 'gbs' : 'gr',
+        targetHandle: a.kind === 'gback' ? 'gbt' : 'gl',
         markerEnd: marker(typeKey),
         data: {
           kind: a.kind,
-          lane: a.kind === 'glong' ? longLanes[a.id] : 0,
+          lane: a.kind === 'glong' ? longLanes[a.id] : a.kind === 'gback' ? backLanes[a.id] : 0,
           srcShift: 0,
           tgtShift: 0,
           srcYOff: aggSrcY[a.id] ?? 0,

@@ -12,7 +12,7 @@ interface EdgeItem {
 }
 
 interface FlowEdgeDataProps {
-  kind: 'loop' | 'back' | 'long' | 'short' | 'gshort' | 'glong'
+  kind: 'loop' | 'back' | 'long' | 'short' | 'gshort' | 'glong' | 'gback'
   lane: number
   srcShift: number
   tgtShift: number
@@ -42,7 +42,7 @@ export default function FlowEdge(props: EdgeProps) {
     path = `M ${sourceX} ${sourceY} C ${sourceX - 95} ${sourceY - 115}, ${sourceX + 95} ${sourceY - 115}, ${targetX} ${targetY}`
     labelX = sourceX
     labelY = sourceY - 88
-  } else if (kind === 'back') {
+  } else if (kind === 'back' || kind === 'gback') {
     // 反向边沿分组下方回勾，泳道避免多条回勾线重叠
     const dip = Math.max(sourceY, targetY) + 56 + lane * 32
     path = `M ${sourceX} ${sourceY} C ${sourceX} ${dip}, ${targetX} ${dip}, ${targetX} ${targetY}`

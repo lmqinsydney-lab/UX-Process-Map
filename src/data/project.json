@@ -469,7 +469,9 @@
               "w": 92,
               "h": 48
             }
-          }
+          },
+          "clickEdgeId": "e17",
+          "instanceNote": "含全部/分期/退款筛选 tab；切换「分期」tab 进入分期记录视图"
         },
         {
           "moduleId": "action-buttons",
@@ -963,7 +965,7 @@
               "h": 5
             }
           },
-          "clickEdgeId": "e17"
+          "clickEdgeId": "e21"
         }
       ]
     },
@@ -1037,7 +1039,7 @@
               "h": 5
             }
           },
-          "clickEdgeId": "e18"
+          "clickEdgeId": "e22"
         }
       ]
     },
@@ -1364,28 +1366,6 @@
       "type": "branch"
     },
     {
-      "id": "e17",
-      "from": {
-        "pageId": "success-paid"
-      },
-      "to": {
-        "pageId": "record-list"
-      },
-      "event": "点击查看分期记录",
-      "type": "main"
-    },
-    {
-      "id": "e18",
-      "from": {
-        "pageId": "success-unpaid"
-      },
-      "to": {
-        "pageId": "record-list"
-      },
-      "event": "点击查看分期记录",
-      "type": "branch"
-    },
-    {
       "id": "e19",
       "from": {
         "pageId": "record-list"
@@ -1405,6 +1385,40 @@
         "pageId": "record-list"
       },
       "event": "返回上一页",
+      "type": "back"
+    },
+    {
+      "id": "e17",
+      "from": {
+        "pageId": "bill-month"
+      },
+      "to": {
+        "pageId": "record-list"
+      },
+      "event": "切换至「分期」tab",
+      "condition": "分期记录页即本月账单-分期筛选视图。TODO(待确认：分期记录页入口路径)",
+      "type": "branch"
+    },
+    {
+      "id": "e21",
+      "from": {
+        "pageId": "success-paid"
+      },
+      "to": {
+        "pageId": "channel-home"
+      },
+      "event": "点击返回首页按钮",
+      "type": "back"
+    },
+    {
+      "id": "e22",
+      "from": {
+        "pageId": "success-unpaid"
+      },
+      "to": {
+        "pageId": "channel-home"
+      },
+      "event": "点击返回首页按钮",
       "type": "back"
     }
   ]
