@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "placeholders": "node scripts/gen-placeholders.mjs",
     "validate": "node scripts/validate-data.mjs",
-    "deploy": "npm run build && cd dist && git init -q && git checkout -qb gh-pages && git add -A && git commit -qm deploy && git push -qf https://github.com/lmqinsydney-lab/UX-Process-Map.git gh-pages && rm -rf .git"
+    "deploy": "npm run build && cd dist && rm -rf .git && git init -q && git checkout -qb gh-pages && git add -A && git commit -qm deploy && git push -qf https://github.com/lmqinsydney-lab/UX-Process-Map.git gh-pages && rm -rf .git"
   },
   "dependencies": {
     "@xyflow/react": "^12.3.0",
