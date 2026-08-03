@@ -7,7 +7,7 @@
     {
       "id": "entry",
       "name": "入口 · 增加按钮气泡引导",
-      "note": "三个入口页均增加分期优惠气泡引导；点击气泡前往还款页并勾选分期还款"
+      "note": "三个入口页均在分期还款按钮上增加分期优惠气泡引导；点击分期还款按钮进入还款页并自动勾选分期还款"
     },
     {
       "id": "repay-flow",
@@ -64,7 +64,7 @@
     {
       "id": "coupon-bubble",
       "name": "分期优惠气泡",
-      "desc": "分期还款按钮上的「首期0息」气泡；点击前往还款页并自动勾选分期还款。",
+      "desc": "分期还款按钮上的「首期0息」优惠引导气泡，仅作展示引导、不可单独点击；优惠置灰时隐藏。",
       "states": [
         {
           "id": "show",
@@ -309,7 +309,9 @@
               "w": 84,
               "h": 7
             }
-          }
+          },
+          "clickEdgeId": "e1",
+          "instanceNote": "点击分期还款按钮进入还款页并自动勾选分期还款；气泡为按钮上的优惠引导"
         },
         {
           "moduleId": "coupon-bubble",
@@ -321,8 +323,7 @@
               "w": 24,
               "h": 3.2
             }
-          },
-          "clickEdgeId": "e1"
+          }
         },
         {
           "moduleId": "quick-grid",
@@ -382,7 +383,9 @@
               "w": 84,
               "h": 6
             }
-          }
+          },
+          "clickEdgeId": "e2",
+          "instanceNote": "点击分期还款按钮进入还款页并自动勾选分期还款；气泡为按钮上的优惠引导"
         },
         {
           "moduleId": "coupon-bubble",
@@ -394,8 +397,7 @@
               "w": 22,
               "h": 3
             }
-          },
-          "clickEdgeId": "e2"
+          }
         },
         {
           "moduleId": "bill-list",
@@ -427,7 +429,7 @@
       "id": "bill-month",
       "processNodeId": "entry",
       "name": "本月账单",
-      "desc": "本月账单页；点击气泡前往还款页并自动勾选分期还款。",
+      "desc": "本月账单页；点击分期还款按钮前往还款页并自动勾选分期还款。",
       "states": [
         {
           "id": "default",
@@ -478,7 +480,9 @@
               "w": 92,
               "h": 7
             }
-          }
+          },
+          "clickEdgeId": "e3",
+          "instanceNote": "点击分期还款按钮进入还款页并自动勾选分期还款；气泡为按钮上的优惠引导"
         },
         {
           "moduleId": "coupon-bubble",
@@ -490,8 +494,7 @@
               "w": 21,
               "h": 3
             }
-          },
-          "clickEdgeId": "e3"
+          }
         }
       ]
     },
@@ -1183,8 +1186,8 @@
         "pageId": "repay-page",
         "stateId": "collapsed"
       },
-      "event": "点击分期优惠气泡",
-      "condition": "优惠未置灰",
+      "event": "点击分期还款按钮",
+      "condition": "进入还款页并自动勾选分期还款；气泡仅为优惠引导（优惠置灰时隐藏）",
       "type": "main"
     },
     {
@@ -1196,8 +1199,8 @@
         "pageId": "repay-page",
         "stateId": "collapsed"
       },
-      "event": "点击分期优惠气泡",
-      "condition": "优惠未置灰",
+      "event": "点击分期还款按钮",
+      "condition": "进入还款页并自动勾选分期还款；气泡仅为优惠引导（优惠置灰时隐藏）",
       "type": "branch"
     },
     {
@@ -1209,8 +1212,8 @@
         "pageId": "repay-page",
         "stateId": "collapsed"
       },
-      "event": "点击分期优惠气泡",
-      "condition": "优惠未置灰；进入后自动勾选分期还款",
+      "event": "点击分期还款按钮",
+      "condition": "进入还款页并自动勾选分期还款；气泡仅为优惠引导（优惠置灰时隐藏）",
       "type": "branch"
     },
     {
@@ -1297,7 +1300,7 @@
       "to": {
         "pageId": "success-paid"
       },
-      "event": "点击确认分期",
+      "event": "点击确认分期按钮",
       "condition": "支付成功且本期已还清",
       "type": "main"
     },
@@ -1309,7 +1312,7 @@
       "to": {
         "pageId": "success-unpaid"
       },
-      "event": "点击确认分期",
+      "event": "点击确认分期按钮",
       "condition": "支付成功且仍有待还（部分分期）",
       "type": "branch"
     },
@@ -1321,7 +1324,7 @@
       "to": {
         "pageId": "repay-page"
       },
-      "event": "点击确认分期",
+      "event": "点击确认分期按钮",
       "condition": "支付失败（余额不足 / 风控拦截），toast 提示并停留当前页。TODO(待补)",
       "type": "error"
     },
@@ -1344,7 +1347,7 @@
       "to": {
         "pageId": "success-paid"
       },
-      "event": "确认分期",
+      "event": "点击确认分期按钮",
       "condition": "支付成功且本期已还清",
       "type": "main"
     },
@@ -1356,7 +1359,7 @@
       "to": {
         "pageId": "success-unpaid"
       },
-      "event": "确认分期",
+      "event": "点击确认分期按钮",
       "condition": "支付成功且仍有待还",
       "type": "branch"
     },
