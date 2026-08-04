@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { asset } from '../../assetUrl'
 import { endpointLabel, getEdge, getModule } from '../../data/loader'
@@ -110,11 +110,19 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
   const zones = page.moduleInstances.filter((i) => i.hotzones[state.id])
   const selected = moduleId ? zones.find((z) => z.moduleId === moduleId) : undefined
   const hz = selected?.hotzones[state.id]
+  // 鼠标进入页面时模块高亮闪两下提示位置；页面内移动不重复触发
+  const [flash, setFlash] = useState(false)
+  const flashTimer = useRef<number | null>(null)
 
   return (
     <>
       <div
-        className="focus-shot nodrag"
+        className={`focus-shot nodrag${flash ? ' flash' : ''}`}
+        onMouseEnter={() => {
+          setFlash(true)
+          if (flashTimer.current) window.clearTimeout(flashTimer.current)
+          flashTimer.current = window.setTimeout(() => setFlash(false), 1050)
+        }}
         onClick={(e) => {
           e.stopPropagation()
           onSelectModule(null)

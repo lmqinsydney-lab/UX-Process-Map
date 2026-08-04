@@ -149,11 +149,17 @@ button { font-family: inherit; cursor: pointer; }
 .oc-title { font-size: 12px; color: #6b7280; text-align: center; margin-bottom: 8px; font-weight: 500; }
 .oc-note { font-size: 11px; color: #9ca3af; line-height: 1.6; margin-top: 8px; }
 .mask { position: absolute; background: rgba(15, 17, 21, 0.55); pointer-events: none; transition: all 0.18s ease; }
-/* 模块热区虚线：仅当鼠标悬停在页面内时显现 */
-.hz { position: absolute; border: 1.5px dashed transparent; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
-.focus-shot:hover .hz { border-color: rgba(79, 70, 229, 0.55); }
-.focus-shot .hz:hover { border-color: #4f46e5; background: rgba(79, 70, 229, 0.08); border-style: solid; }
-.hz.sel, .focus-shot:hover .hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+/* 模块热区：进入页面时整体闪两下提示位置；hover 单个模块时紫色高亮常显（不描边） */
+.hz { position: absolute; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; }
+.focus-shot .hz:hover { background: rgba(79, 70, 229, 0.14); }
+.focus-shot.flash .hz { animation: hz-flash 1s ease; }
+@keyframes hz-flash {
+  0%, 100% { background: rgba(79, 70, 229, 0); }
+  25%, 65% { background: rgba(79, 70, 229, 0.18); }
+  45% { background: rgba(79, 70, 229, 0.04); }
+}
+.hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+.hz.sel:hover { background: none; }
 
 /* ---------- 右侧停靠面板 ---------- */
 .focus-panel {
