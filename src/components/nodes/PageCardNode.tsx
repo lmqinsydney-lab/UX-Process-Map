@@ -12,6 +12,7 @@ interface PageCardData {
   isFocused: boolean
   focusStateId: string | null
   focusModuleId: string | null
+  focusHoverModuleId: string | null
   onToggle: (pageId: string) => void
   onSelectModule: (moduleId: string | null) => void
   onJumpEdge: (edgeId: string) => void
@@ -105,7 +106,7 @@ function StateTray({ page, stateEdges, onPickState }: { page: Page; stateEdges: 
 }
 
 /** 聚焦态：完整截图 + 模块热区 + 聚光灯蒙层，直接绘制在画布节点内 */
-function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: { page: Page; stateId: string; moduleId: string | null; onSelectModule: (m: string | null) => void; onJumpEdge: (edgeId: string) => void }) {
+function FocusedViewer({ page, stateId, moduleId, hoverId, onSelectModule, onJumpEdge }: { page: Page; stateId: string; moduleId: string | null; hoverId: string | null; onSelectModule: (m: string | null) => void; onJumpEdge: (edgeId: string) => void }) {
   const state = page.states.find((s) => s.id === stateId) ?? page.states[0]
   const zones = page.moduleInstances.filter((i) => i.hotzones[state.id])
   const selected = moduleId ? zones.find((z) => z.moduleId === moduleId) : undefined
@@ -117,8 +118,9 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
   return (
     <>
       <div
-        className={`focus-shot nodrag${flash ? ' flash' : ''}`}
+        className={`focus-shot nodrag${flash && !moduleId ? ' flash' : ''}${moduleId ? ' has-sel' : ''}`}
         onMouseEnter={() => {
+          if (moduleId) return
           setFlash(true)
           if (flashTimer.current) window.clearTimeout(flashTimer.current)
           flashTimer.current = window.setTimeout(() => setFlash(false), 1450)
@@ -144,7 +146,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
           return (
             <div
               key={z.moduleId}
-              className={`hz${isSel ? ' sel' : ''}${clickEdge ? ' jumpable' : ''}`}
+              className={`hz${isSel ? ' sel' : ''}${!moduleId && z.moduleId === hoverId ? ' hovered' : ''}${clickEdge ? ' jumpable' : ''}`}
               style={{ left: `${zone.x}%`, top: `${zone.y}%`, width: `${zone.w}%`, height: `${zone.h}%` }}
               title={
                 clickEdge
@@ -168,7 +170,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
 }
 
 export default function PageCardNode(props: NodeProps) {
-  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, onToggle, onSelectModule, onJumpEdge, onPickState } =
+  const { page, expanded, stateEdges, isFocused, focusStateId, focusModuleId, focusHoverModuleId, onToggle, onSelectModule, onJumpEdge, onPickState } =
     props.data as unknown as PageCardData
   const [compareOpen, setCompareOpen] = useState(false)
 
@@ -185,7 +187,7 @@ export default function PageCardNode(props: NodeProps) {
           {page.name}
         </div>
         {isFocused ? (
-          <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} onSelectModule={onSelectModule} onJumpEdge={onJumpEdge} />
+          <FocusedViewer page={page} stateId={focusStateId ?? page.states[0].id} moduleId={focusModuleId} hoverId={focusHoverModuleId} onSelectModule={onSelectModule} onJumpEdge={onJumpEdge} />
         ) : (
           <div className="page-thumb-box">
             <img className="page-thumb" src={asset(page.states[0].image)} draggable={false} alt={page.name} />

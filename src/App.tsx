@@ -9,6 +9,7 @@ export default function App() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
+  const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const wrapRef = useRef<HTMLElement | null>(null)
   const focusRef = useRef<FocusState | null>(null)
@@ -133,6 +134,7 @@ export default function App() {
             expanded={expanded}
             openEdgeId={openEdgeId}
             focus={focus}
+            hoverModuleId={hoverModuleId}
             onOpenPage={onOpenPage}
             onToggleExpand={onToggleExpand}
             onOpenEdge={setOpenEdgeId}
@@ -169,6 +171,7 @@ export default function App() {
               }
             }}
             onSelectModule={onSelectModule}
+            onHoverModule={setHoverModuleId}
           />
         )}
       </main>

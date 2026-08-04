@@ -49,6 +49,7 @@ export function buildGraph(
   expanded: Set<string>,
   openEdgeId: string | null,
   focus: FocusState | null,
+  hoverModuleId: string | null,
   cb: GraphCallbacks,
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
@@ -104,6 +105,7 @@ export function buildGraph(
           stateEdges: stateEdgesOf(page.id),
           focusStateId: focus?.pageId === page.id ? focus.stateId : null,
           focusModuleId: focus?.pageId === page.id ? focus.moduleId : null,
+          focusHoverModuleId: focus?.pageId === page.id ? hoverModuleId : null,
           isFocused: focus?.pageId === page.id,
           onToggle: cb.onToggleExpand,
           onSelectModule: cb.onSelectModule,

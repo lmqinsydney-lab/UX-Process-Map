@@ -8,9 +8,10 @@ interface Props {
   onGoPage: (pageId: string, moduleId?: string) => void
   onState: (stateId: string) => void
   onSelectModule: (moduleId: string | null) => void
+  onHoverModule: (moduleId: string | null) => void
 }
 
-export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelectModule }: Props) {
+export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelectModule, onHoverModule }: Props) {
   const page = getPage(focus.pageId)
   const processNode = getProcessNode(page.processNodeId)
   const idx = project.pages.findIndex((p) => p.id === focus.pageId)
@@ -42,6 +43,7 @@ export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelect
           moduleId={focus.moduleId}
           onState={onState}
           onSelectModule={onSelectModule}
+          onHoverModule={onHoverModule}
           onJump={(pageId, moduleId) => onGoPage(pageId, moduleId)}
         />
       </div>

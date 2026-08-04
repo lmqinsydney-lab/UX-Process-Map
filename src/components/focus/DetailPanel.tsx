@@ -9,6 +9,7 @@ interface Props {
   moduleId: string | null
   onState: (stateId: string) => void
   onSelectModule: (moduleId: string | null) => void
+  onHoverModule: (moduleId: string | null) => void
   onJump: (pageId: string, moduleId: string) => void
 }
 
@@ -21,6 +22,7 @@ function ModuleCard({
   expanded,
   onToggle,
   onState,
+  onHoverModule,
   onJump,
 }: {
   page: Page
@@ -30,6 +32,7 @@ function ModuleCard({
   expanded: boolean
   onToggle: () => void
   onState: Props['onState']
+  onHoverModule: Props['onHoverModule']
   onJump: Props['onJump']
 }) {
   const mod = getModule(inst.moduleId)
@@ -64,7 +67,12 @@ function ModuleCard({
   }, [expanded])
 
   return (
-    <div ref={ref} className={`module-card${expanded ? ' open' : ''}${inState ? '' : ' ghost'}`}>
+    <div
+      ref={ref}
+      className={`module-card${expanded ? ' open' : ''}${inState ? '' : ' ghost'}`}
+      onMouseEnter={() => inState && onHoverModule(inst.moduleId)}
+      onMouseLeave={() => onHoverModule(null)}
+    >
       <div
         className="mc-head"
         onClick={inState ? onToggle : undefined}
@@ -133,7 +141,7 @@ function ModuleCard({
   )
 }
 
-export default function DetailPanel({ page, stateId, moduleId, onState, onSelectModule, onJump }: Props) {
+export default function DetailPanel({ page, stateId, moduleId, onState, onSelectModule, onHoverModule, onJump }: Props) {
   const [editOpen, setEditOpen] = useState(false)
 
   return (
@@ -159,6 +167,7 @@ export default function DetailPanel({ page, stateId, moduleId, onState, onSelect
                 expanded={inst.moduleId === moduleId}
                 onToggle={() => onSelectModule(inst.moduleId === moduleId ? null : inst.moduleId)}
                 onState={onState}
+                onHoverModule={onHoverModule}
                 onJump={onJump}
               />
             ))}
