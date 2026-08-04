@@ -121,7 +121,7 @@ function FocusedViewer({ page, stateId, moduleId, onSelectModule, onJumpEdge }: 
         onMouseEnter={() => {
           setFlash(true)
           if (flashTimer.current) window.clearTimeout(flashTimer.current)
-          flashTimer.current = window.setTimeout(() => setFlash(false), 1050)
+          flashTimer.current = window.setTimeout(() => setFlash(false), 2050)
         }}
         onClick={(e) => {
           e.stopPropagation()

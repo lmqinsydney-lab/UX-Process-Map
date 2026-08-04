@@ -151,12 +151,12 @@ button { font-family: inherit; cursor: pointer; }
 .mask { position: absolute; background: rgba(15, 17, 21, 0.55); pointer-events: none; transition: all 0.18s ease; }
 /* 模块热区：进入页面时整体闪两下提示位置；hover 单个模块时紫色高亮常显（不描边） */
 .hz { position: absolute; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; }
-.focus-shot .hz:hover { background: rgba(79, 70, 229, 0.14); }
-.focus-shot.flash .hz { animation: hz-flash 1s ease; }
+.focus-shot .hz:hover { background: rgba(79, 70, 229, 0.1); }
+.focus-shot.flash .hz { animation: hz-flash 2s ease; }
 @keyframes hz-flash {
   0%, 100% { background: rgba(79, 70, 229, 0); }
-  25%, 65% { background: rgba(79, 70, 229, 0.18); }
-  45% { background: rgba(79, 70, 229, 0.04); }
+  25%, 65% { background: rgba(79, 70, 229, 0.1); }
+  45% { background: rgba(79, 70, 229, 0.03); }
 }
 .hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 .hz.sel:hover { background: none; }
