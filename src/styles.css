@@ -152,10 +152,11 @@ button { font-family: inherit; cursor: pointer; }
 /* 模块热区：进入页面时整体闪两下提示位置；hover 单个模块时紫色高亮常显（不描边） */
 .hz { position: absolute; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; }
 .focus-shot .hz:hover { background: rgba(79, 70, 229, 0.1); }
-.focus-shot.flash .hz { animation: hz-flash 2s ease; }
+/* 淡入 0.6s → 保持 0.2s → 淡出 0.6s */
+.focus-shot.flash .hz { animation: hz-flash 1.4s ease; }
 @keyframes hz-flash {
   0%, 100% { background: rgba(79, 70, 229, 0); }
-  30%, 70% { background: rgba(79, 70, 229, 0.1); }
+  43%, 57% { background: rgba(79, 70, 229, 0.1); }
 }
 .hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 .hz.sel:hover { background: none; }
