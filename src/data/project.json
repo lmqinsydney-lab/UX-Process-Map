@@ -738,10 +738,7 @@
         {
           "id": "default",
           "name": "默认",
-          "image": "assets/pages/plan-sheet/default.png",
-          "moduleStates": {
-            "installment-coupon": "in-use"
-          }
+          "image": "assets/pages/plan-sheet/default.png"
         }
       ],
       "moduleInstances": [
@@ -757,8 +754,8 @@
           }
         },
         {
-          "moduleId": "installment-coupon",
-          "instanceNote": "首期展示优惠后息费 0.00 元，原息费划线",
+          "moduleId": "coupon-deduction",
+          "instanceNote": "分期计划首期展示优惠后息费 0.00 元与划线原价",
           "hotzones": {
             "default": {
               "x": 25,

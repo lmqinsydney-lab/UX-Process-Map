@@ -55,6 +55,24 @@ for (const edge of project.edges) {
   if (!edge.event) errors.push(`edge ${edge.id} 缺少触发事件`)
 }
 
+// 质量门禁（警告）：多状态模块的实例若在该页没有任何状态标注，
+// 说明它永远无法联动到其他状态——大概率是把形态不同的组件误判成了同一模块，或漏了标注
+const warnings = []
+for (const page of project.pages) {
+  for (const inst of page.moduleInstances) {
+    const mod = project.modules.find((m) => m.id === inst.moduleId)
+    if (!mod || mod.states.length <= 1) continue
+    const annotated = page.states.some((s) => s.moduleStates && s.moduleStates[inst.moduleId])
+    if (!annotated) {
+      warnings.push(`page ${page.id} 的模块 ${inst.moduleId}（${mod.states.length} 态）无任何页面状态标注：确认是否同一组件，或补 moduleStates`)
+    }
+  }
+}
+if (warnings.length) {
+  console.warn(`⚠ 模块同一性警告（${warnings.length} 处）:`)
+  for (const w of warnings) console.warn('  - ' + w)
+}
+
 if (errors.length) {
   console.error(`✗ 校验失败（${errors.length} 处）:`)
   for (const e of errors) console.error('  - ' + e)
