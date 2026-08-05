@@ -160,7 +160,7 @@ button { font-family: inherit; cursor: pointer; }
   0%, 100% { background: rgba(79, 70, 229, 0); }
   43%, 57% { background: rgba(79, 70, 229, 0.1); }
 }
-.hz.sel { border: 2px solid #4f46e5; background: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+.hz.sel { background: none; }
 .hz.sel:hover { background: none; }
 
 /* ---------- 右侧停靠面板 ---------- */
