@@ -66,6 +66,11 @@ function ModuleCard({
     if (expanded) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [expanded])
 
+  // 只展示本页面存在对应形态的模块状态（当前生效态 + 有页面状态标注的态）
+  const reachableStates = mod.states.filter(
+    (s) => s.id === modState || page.states.some((ps) => ps.moduleStates?.[inst.moduleId] === s.id),
+  )
+
   return (
     <div
       ref={ref}
@@ -94,26 +99,15 @@ function ModuleCard({
         )}
         <span className="mc-chev">{expanded ? '▾' : '▸'}</span>
       </div>
-      {(!inState || mod.states.length > 1) && (
+      {(!inState || reachableStates.length > 1) && (
         <div className="mc-tabs">
           {inState ? (
             <div className="tabs">
-              {mod.states.map((s) => {
-                // 本页没有任何页面状态对应该模块状态 → 置灰禁用，不假装可切换
-                const reachable =
-                  s.id === modState || page.states.some((ps) => ps.moduleStates?.[inst.moduleId] === s.id)
-                return (
-                  <button
-                    key={s.id}
-                    className={`tab${s.id === modState ? ' on' : ''}`}
-                    disabled={!reachable}
-                    title={reachable ? undefined : '本页面无该状态的形态（其他页面可见）'}
-                    onClick={() => reachable && pickModState(s.id)}
-                  >
-                    {s.name}
-                  </button>
-                )
-              })}
+              {reachableStates.map((s) => (
+                <button key={s.id} className={`tab${s.id === modState ? ' on' : ''}`} onClick={() => pickModState(s.id)}>
+                  {s.name}
+                </button>
+              ))}
             </div>
           ) : (
             <span className="mc-cond">{inst.visibleWhen ?? '当前状态不展示'}</span>
