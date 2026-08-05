@@ -274,7 +274,10 @@
         {
           "id": "default",
           "name": "默认",
-          "image": "assets/pages/channel-home/default.png"
+          "image": "assets/pages/channel-home/default.png",
+          "moduleStates": {
+            "coupon-bubble": "show"
+          }
         }
       ],
       "moduleInstances": [
@@ -347,7 +350,10 @@
         {
           "id": "default",
           "name": "默认",
-          "image": "assets/pages/bill-all/default.png"
+          "image": "assets/pages/bill-all/default.png",
+          "moduleStates": {
+            "coupon-bubble": "show"
+          }
         }
       ],
       "moduleInstances": [
@@ -434,7 +440,10 @@
         {
           "id": "default",
           "name": "默认",
-          "image": "assets/pages/bill-month/default.png"
+          "image": "assets/pages/bill-month/default.png",
+          "moduleStates": {
+            "coupon-bubble": "show"
+          }
         }
       ],
       "moduleInstances": [
@@ -729,7 +738,10 @@
         {
           "id": "default",
           "name": "默认",
-          "image": "assets/pages/plan-sheet/default.png"
+          "image": "assets/pages/plan-sheet/default.png",
+          "moduleStates": {
+            "installment-coupon": "in-use"
+          }
         }
       ],
       "moduleInstances": [
@@ -828,7 +840,11 @@
         {
           "id": "default",
           "name": "改动后",
-          "image": "assets/pages/ir-repay-page/default.png"
+          "image": "assets/pages/ir-repay-page/default.png",
+          "moduleStates": {
+            "installment-coupon": "in-use",
+            "term-selector": "collapsed"
+          }
         }
       ],
       "moduleInstances": [
