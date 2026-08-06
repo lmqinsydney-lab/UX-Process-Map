@@ -242,8 +242,7 @@ export default function FlowStep({ onNext, busy }: Props) {
         {genStep && <div className="fg-genmask">{genStep}</div>}
         {rfNodes.length > 0 && (
           <button className="fg-next-float" disabled={busy} onClick={() => onNext(buildFlow())}>
-            <span className="fg-next-main">下一步 · 生成可视化体验链路</span>
-            <span className="fg-next-sub">为每个页面节点自动生成初版设计稿 →</span>
+            <span className="fg-next-main">生成可视化链路</span>
           </button>
         )}
         <ReactFlowProvider>
