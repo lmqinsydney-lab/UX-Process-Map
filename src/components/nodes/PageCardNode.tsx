@@ -132,12 +132,10 @@ function FocusedViewer({ page, stateId, moduleId, hoverId, onSelectModule, onJum
       >
         <img src={asset(state.image)} alt={`${page.name} · ${state.name}`} draggable={false} />
         {hz && (
-          <>
-            <div className="mask" style={{ left: 0, top: 0, width: '100%', height: `${hz.y}%` }} />
-            <div className="mask" style={{ left: 0, top: `${hz.y}%`, width: `${hz.x}%`, height: `${hz.h}%` }} />
-            <div className="mask" style={{ left: `${hz.x + hz.w}%`, top: `${hz.y}%`, width: `${100 - hz.x - hz.w}%`, height: `${hz.h}%` }} />
-            <div className="mask" style={{ left: 0, top: `${hz.y + hz.h}%`, width: '100%', height: `${100 - hz.y - hz.h}%` }} />
-          </>
+          <div
+            className="spotlight"
+            style={{ left: `${hz.x}%`, top: `${hz.y}%`, width: `${hz.w}%`, height: `${hz.h}%` }}
+          />
         )}
         {zones.map((z) => {
           const zone = z.hotzones[state.id]
