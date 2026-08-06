@@ -55,6 +55,8 @@ export interface Page {
   id: string
   processNodeId: string
   name: string
+  /** 与判断节点在分组内的混合排序序号 */
+  seq?: number
   desc?: string
   onlineRefs?: OnlineRef[]
   /** 线上参考页面：不参与流程，仅供聚焦时与当前页面并排对比 */
@@ -79,11 +81,22 @@ export interface FlowEdgeData {
   type: EdgeType
 }
 
+/** 判断节点：无截图无模块，只有判断规则说明；分支条件写在出边上 */
+export interface Decision {
+  id: string
+  processNodeId: string
+  name: string
+  desc?: string
+  /** 与页面在分组内的混合排序序号（管线生成时按流程拓扑赋值） */
+  seq?: number
+}
+
 export interface Project {
   project: { name: string; version: string }
   processNodes: ProcessNode[]
   modules: ModuleDef[]
   pages: Page[]
+  decisions?: Decision[]
   edges: FlowEdgeData[]
 }
 

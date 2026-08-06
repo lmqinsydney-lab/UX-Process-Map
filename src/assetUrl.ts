@@ -7,4 +7,5 @@ declare global {
 
 const BASE: string = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'
 
-export const asset = (path: string): string => window.__ASSETS__?.[path] ?? BASE + path
+export const asset = (path: string): string =>
+  path.startsWith('data:') || path.startsWith('blob:') ? path : window.__ASSETS__?.[path] ?? BASE + path

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ReactFlowProvider, type ReactFlowInstance } from '@xyflow/react'
 import CanvasOverview from './components/CanvasOverview'
 import FocusPanel from './components/focus/FocusPanel'
-import { getPage, project } from './data/loader'
+import FlowStep from './components/flowgen/FlowStep'
+import { compileFlow, type Flow } from './flowgen/compile'
+import { demoProject, getPage, project, setProject } from './data/loader'
 import { CARD_W, FOCUS_CARD_H, PANEL_W, type FocusState } from './layout'
 
 export default function App() {
@@ -10,6 +12,38 @@ export default function App() {
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
+  // 两步流程：第一步一句话生流程，第二步可视化体验链路
+  const [step, setStep] = useState<'flow' | 'canvas'>(project === demoProject ? 'flow' : 'canvas')
+  const [flow, setFlow] = useState<Flow | null>(null)
+  const [pipe, setPipe] = useState<{ done: number; total: number; label: string } | null>(null)
+  const [projVersion, setProjVersion] = useState(0)
+
+  const runPipeline = useCallback(async () => {
+    if (!flow || pipe) return
+    setPipe({ done: 0, total: 1, label: '准备中…' })
+    try {
+      const compiled = await compileFlow(flow, (done, total, label) => setPipe({ done, total, label }))
+      setProject(compiled)
+      setFocus(null)
+      setExpanded(new Set())
+      setOpenEdgeId(null)
+      setHoverModuleId(null)
+      setProjVersion((v) => v + 1)
+      setStep('canvas')
+    } finally {
+      setPipe(null)
+    }
+  }, [flow, pipe])
+
+  const loadDemoProject = useCallback(() => {
+    setProject(demoProject, false)
+    setFocus(null)
+    setExpanded(new Set())
+    setOpenEdgeId(null)
+    setHoverModuleId(null)
+    setProjVersion((v) => v + 1)
+    setStep('canvas')
+  }, [])
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const wrapRef = useRef<HTMLElement | null>(null)
   const focusRef = useRef<FocusState | null>(null)
@@ -124,12 +158,23 @@ export default function App() {
       <header className="topbar">
         <span className="logo">◍</span>
         <span className="title">可视化体验链路</span>
-        <span className="subtitle">{project.project.name}</span>
-        <span className="topbar-hint">点击页面卡片聚焦 · 点击「n 状态」角标展开 · 点击连线看事件与条件</span>
-        <span className="ver">Demo · {project.project.version}</span>
+        <div className="step-tabs">
+          <button className={step === 'flow' ? 'on' : ''} onClick={() => setStep('flow')}>① 流程生成</button>
+          <button className={step === 'canvas' ? 'on' : ''} onClick={() => setStep('canvas')}>② 可视化链路</button>
+        </div>
+        {step === 'canvas' && <span className="subtitle">{project.project.name}</span>}
+        <span className="topbar-hint">
+          {step === 'flow'
+            ? '一句话或 PRD 生成流程图 → 点「下一步」自动生成链路 1.0'
+            : '点击页面卡片聚焦 · 点击「n 个状态」角标展开 · 点击连线看事件与条件'}
+        </span>
+        {step === 'canvas' && (
+          <button className="fg-chip" onClick={loadDemoProject}>示例项目</button>
+        )}
+        <span className="ver">Demo</span>
       </header>
-      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)}>
-        <ReactFlowProvider>
+      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)} style={{ display: step === 'flow' ? 'none' : undefined }}>
+        <ReactFlowProvider key={projVersion}>
           <CanvasOverview
             expanded={expanded}
             openEdgeId={openEdgeId}
@@ -175,6 +220,15 @@ export default function App() {
           />
         )}
       </main>
+      {step === 'flow' && <FlowStep flow={flow} onFlowChange={setFlow} onNext={runPipeline} busy={!!pipe} />}
+      {pipe && (
+        <div className="pipe-mask">
+          <div className="pipe-title">正在生成可视化体验链路 1.0</div>
+          <div className="pipe-label">生成页面：{pipe.label}（{Math.min(pipe.done + 1, pipe.total)}/{pipe.total}）</div>
+          <div className="pipe-bar"><i style={{ width: `${(pipe.done / Math.max(1, pipe.total)) * 100}%` }} /></div>
+          <div className="pipe-sub">逐节点生成初版页面 · 提取模块热区 · 组装链路数据</div>
+        </div>
+      )}
     </div>
   )
 }

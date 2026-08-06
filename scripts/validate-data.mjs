@@ -19,6 +19,11 @@ const dup = (arr, label) => {
 const nodeIds = dup(project.processNodes.map((n) => n.id), 'processNode')
 const moduleIds = dup(project.modules.map((m) => m.id), 'module')
 const pageIds = dup(project.pages.map((p) => p.id), 'page')
+const decisionIds = dup((project.decisions ?? []).map((d) => d.id), 'decision')
+for (const dec of project.decisions ?? []) {
+  if (!nodeIds.has(dec.processNodeId)) errors.push(`decision ${dec.id} 引用了不存在的流程节点 ${dec.processNodeId}`)
+}
+const endpointIds = new Set([...pageIds, ...decisionIds])
 dup(project.edges.map((e) => e.id), 'edge')
 
 for (const page of project.pages) {
@@ -45,7 +50,7 @@ const validTypes = new Set(['main', 'branch', 'error', 'back'])
 for (const edge of project.edges) {
   for (const end of ['from', 'to']) {
     const ep = edge[end]
-    if (!pageIds.has(ep.pageId)) errors.push(`edge ${edge.id} ${end} 引用了不存在的页面 ${ep.pageId}`)
+    if (!endpointIds.has(ep.pageId)) errors.push(`edge ${edge.id} ${end} 引用了不存在的页面/判断节点 ${ep.pageId}`)
     if (ep.stateId) {
       const page = project.pages.find((p) => p.id === ep.pageId)
       if (page && !page.states.some((s) => s.id === ep.stateId)) errors.push(`edge ${edge.id} ${end} 引用了不存在的状态 ${ep.pageId}/${ep.stateId}`)

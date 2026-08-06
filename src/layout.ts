@@ -1,10 +1,14 @@
 import type { Edge, Node } from '@xyflow/react'
 import { MarkerType } from '@xyflow/react'
 import { canvasEdges, endpointLabel, project, stateEdgesOf } from './data/loader'
+import type { Decision, Page } from './types/model'
 import type { EdgeType } from './types/model'
 
 export const CARD_W = 190
 export const CARD_H = 422
+/** 判断节点（菱形小卡）尺寸 */
+export const DEC_W = 150
+export const DEC_H = 96
 const GROUP_PAD_X = 24
 const GROUP_PAD_TOP = 58
 const GROUP_PAD_BOTTOM = 30
@@ -65,13 +69,25 @@ export function buildGraph(
 
   for (const pn of project.processNodes) {
     const pages = project.pages.filter((p) => p.processNodeId === pn.id)
+    const decisions = (project.decisions ?? []).filter((d) => d.processNodeId === pn.id)
+    // 页面与判断节点按 seq 混排（无 seq 时保持页面在前的原顺序）
+    type Ent = { kind: 'page'; page: Page; seq: number } | { kind: 'decision'; dec: Decision; seq: number }
+    const ents: Ent[] = [
+      ...pages.map((page, i) => ({ kind: 'page' as const, page, seq: page.seq ?? i })),
+      ...decisions.map((dec, i) => ({ kind: 'decision' as const, dec, seq: dec.seq ?? pages.length + i })),
+    ].sort((a, b) => a.seq - b.seq)
+
     const height = GROUP_PAD_TOP + CARD_H + GROUP_PAD_BOTTOM
     let innerX = GROUP_PAD_X
     const xs: number[] = []
-    pages.forEach((page, i) => {
-      if (i > 0) innerX += hasEdgeBetween(pages[i - 1].id, page.id) ? CARD_GAP : NARROW_GAP
+    ents.forEach((ent, i) => {
+      if (i > 0) {
+        const prevId = ents[i - 1].kind === 'page' ? (ents[i - 1] as { page: Page }).page.id : (ents[i - 1] as { dec: Decision }).dec.id
+        const curId = ent.kind === 'page' ? ent.page.id : ent.dec.id
+        innerX += hasEdgeBetween(prevId, curId) ? CARD_GAP : NARROW_GAP
+      }
       xs.push(innerX)
-      innerX += CARD_W
+      innerX += ent.kind === 'page' ? CARD_W : DEC_W
     })
     const width = innerX + GROUP_PAD_X
     groupPos.set(pn.id, { left: cursorX, right: cursorX + width })
@@ -89,7 +105,32 @@ export function buildGraph(
       zIndex: -1,
     })
 
-    pages.forEach((page, i) => {
+    ents.forEach((ent, i) => {
+      if (ent.kind === 'decision') {
+        const left = cursorX + xs[i]
+        pagePos.set(ent.dec.id, { left, right: left + DEC_W })
+        nodes.push({
+          id: ent.dec.id,
+          type: 'decisionNode',
+          parentId: `g:${pn.id}`,
+          position: { x: xs[i], y: GROUP_PAD_TOP + (CARD_H - DEC_H) / 2 },
+          width: DEC_W,
+          height: DEC_H,
+          data: {
+            decision: ent.dec,
+            branches: project.edges
+              .filter((e) => e.from.pageId === ent.dec.id)
+              .map((e) => ({ label: e.event, condition: e.condition, toLabel: endpointLabel(e.to), type: e.type })),
+            open: openEdgeId === `dec:${ent.dec.id}`,
+            onOpenEdge: cb.onOpenEdge,
+          },
+          draggable: false,
+          selectable: false,
+          zIndex: 1,
+        })
+        return
+      }
+      const page = ent.page
       const left = cursorX + xs[i]
       pagePos.set(page.id, { left, right: left + CARD_W })
       nodes.push({
@@ -122,7 +163,10 @@ export function buildGraph(
   }
 
   const all = canvasEdges()
-  const pageGroup = new Map(project.pages.map((p) => [p.id, p.processNodeId]))
+  const pageGroup = new Map<string, string>([
+    ...project.pages.map((p) => [p.id, p.processNodeId] as [string, string]),
+    ...(project.decisions ?? []).map((d) => [d.id, d.processNodeId] as [string, string]),
+  ])
   /** 流程内页面级连线；跨流程连线聚合为分组级单箭头 */
   const intra = all.filter((e) => pageGroup.get(e.from.pageId) === pageGroup.get(e.to.pageId))
   const cross = all.filter((e) => pageGroup.get(e.from.pageId) !== pageGroup.get(e.to.pageId))

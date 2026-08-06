@@ -3,9 +3,10 @@ import { Background, Controls, MiniMap, ReactFlow, useReactFlow, useStoreApi, ty
 import { buildGraph, type FocusState, type GraphCallbacks } from '../layout'
 import ProcessGroupNode from './nodes/ProcessGroupNode'
 import PageCardNode from './nodes/PageCardNode'
+import DecisionNode from './nodes/DecisionNode'
 import FlowEdge from './edges/FlowEdge'
 
-const nodeTypes = { processGroup: ProcessGroupNode, pageCard: PageCardNode }
+const nodeTypes = { processGroup: ProcessGroupNode, pageCard: PageCardNode, decisionNode: DecisionNode }
 const edgeTypes = { flow: FlowEdge }
 
 interface Props extends GraphCallbacks {
