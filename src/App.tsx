@@ -14,11 +14,10 @@ export default function App() {
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
   // 两步流程：第一步一句话生流程，第二步可视化体验链路
   const [step, setStep] = useState<'flow' | 'canvas'>(project === demoProject ? 'flow' : 'canvas')
-  const [flow, setFlow] = useState<Flow | null>(null)
   const [pipe, setPipe] = useState<{ done: number; total: number; label: string } | null>(null)
   const [projVersion, setProjVersion] = useState(0)
 
-  const runPipeline = useCallback(async () => {
+  const runPipeline = useCallback(async (flow: Flow) => {
     if (!flow || pipe) return
     setPipe({ done: 0, total: 1, label: '准备中…' })
     try {
@@ -33,7 +32,7 @@ export default function App() {
     } finally {
       setPipe(null)
     }
-  }, [flow, pipe])
+  }, [pipe])
 
   const loadDemoProject = useCallback(() => {
     setProject(demoProject, false)
@@ -220,7 +219,9 @@ export default function App() {
           />
         )}
       </main>
-      {step === 'flow' && <FlowStep flow={flow} onFlowChange={setFlow} onNext={runPipeline} busy={!!pipe} />}
+      <div style={{ display: step === 'flow' ? 'contents' : 'none' }}>
+        <FlowStep onNext={runPipeline} busy={!!pipe} />
+      </div>
       {pipe && (
         <div className="pipe-mask">
           <div className="pipe-title">正在生成可视化体验链路 1.0</div>

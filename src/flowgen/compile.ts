@@ -8,6 +8,8 @@ export interface FlowNodeT {
   title: string
   desc?: string
   depth?: number
+  /** 页面状态定义（第一步可编辑）；缺省视为单个「默认」状态 */
+  states?: { id: string; name: string; desc?: string }[]
 }
 export interface FlowEdgeT {
   from: string
@@ -100,59 +102,74 @@ export async function compileFlow(
   const pages: Page[] = []
 
   try {
+    const totalShots = pageNodes.reduce((a, n) => a + (n.states?.length || 1), 0)
     let done = 0
     for (const n of pageNodes) {
-      onProgress(done, pageNodes.length, n.title)
-      const spec = buildSpec({ title: n.title, desc: n.desc || '' }, '', { fw: 'react', side: 'c', ds: 'gone-c', pt: 'auto' })
-      const frame = document.createElement('div')
-      frame.style.cssText = `width:${PHONE_W}px;height:${PHONE_H}px;overflow:hidden;background:#F5F7FA;`
-      frame.innerHTML = renderPageBody(spec, false)
-      host.appendChild(frame)
-      // 等一帧完成布局（个别环境 rAF 不可用则退化为宏任务）
-      await new Promise<void>((r) => {
-        let settled = false
-        requestAnimationFrame(() => { settled = true; r() })
-        setTimeout(() => { if (!settled) r() }, 50)
-      })
-
-      // 组件热区：spec.comps 与 DOM .comp 按渲染顺序一一对应
-      const frameRect = frame.getBoundingClientRect()
-      const els = [...frame.querySelectorAll<HTMLElement>('.comp')]
+      const stateDefs = n.states?.length ? n.states : [{ id: 'default', name: '默认' }]
+      const pageStates: Page['states'] = []
       const instMap = new Map<string, ModuleInstance>()
-      let elIdx = 0
-      for (const c of spec.comps as { type: string }[]) {
-        const el = els[elIdx]
-        if (!el) break
-        elIdx++
-        const r = el.getBoundingClientRect()
-        let x = ((r.left - frameRect.left) / PHONE_W) * 100
-        let y = ((r.top - frameRect.top) / PHONE_H) * 100
-        let w = (r.width / PHONE_W) * 100
-        let h = (r.height / PHONE_H) * 100
-        if (y >= 100 || h <= 0.5) continue // 被视口裁掉的组件不建热区
-        if (y + h > 100) h = 100 - y
-        if (x + w > 100) w = 100 - x
-        x = Math.max(0, +x.toFixed(1)); y = Math.max(0, +y.toFixed(1))
-        w = +w.toFixed(1); h = +h.toFixed(1)
-        const mod = COMP_MODULE[c.type] ?? { id: `gen-${c.type}`, name: c.type, desc: '生成组件' }
-        if (!modulesUsed.has(mod.id)) {
-          modulesUsed.set(mod.id, { id: mod.id, name: mod.name, desc: mod.desc, states: [{ id: 'default', name: '默认' }] })
-        }
-        const exist = instMap.get(mod.id)
-        if (exist) {
-          // 同页同类型组件出现多次 → 1.0 先取包围盒并集
-          const hz = exist.hotzones.default
-          const nx = Math.min(hz.x, x), ny = Math.min(hz.y, y)
-          hz.w = +(Math.max(hz.x + hz.w, x + w) - nx).toFixed(1)
-          hz.h = +(Math.max(hz.y + hz.h, y + h) - ny).toFixed(1)
-          hz.x = nx; hz.y = ny
-        } else {
-          instMap.set(mod.id, { moduleId: mod.id, hotzones: { default: { x, y, w, h } } })
-        }
-      }
 
-      const image = await snapshot(frame)
-      host.removeChild(frame)
+      for (const sd of stateDefs) {
+        onProgress(done, totalShots, stateDefs.length > 1 ? `${n.title} · ${sd.name}` : n.title)
+        // 状态名/说明拼进语义文本，让 mock 生图对不同状态产出差异化页面
+        const stateHint = sd.name === '默认' ? '' : ` ${sd.name} ${sd.desc || ''}`
+        const spec = buildSpec({ title: n.title, desc: (n.desc || '') + stateHint }, sd.desc || '', { fw: 'react', side: 'c', ds: 'gone-c', pt: 'auto' })
+        const frame = document.createElement('div')
+        frame.style.cssText = `width:${PHONE_W}px;height:${PHONE_H}px;overflow:hidden;background:#F5F7FA;`
+        frame.innerHTML = renderPageBody(spec, false)
+        host.appendChild(frame)
+        // 等一帧完成布局（个别环境 rAF 不可用则退化为宏任务）
+        await new Promise<void>((r) => {
+          let settled = false
+          requestAnimationFrame(() => { settled = true; r() })
+          setTimeout(() => { if (!settled) r() }, 50)
+        })
+
+        // 组件热区：spec.comps 与 DOM .comp 按渲染顺序一一对应
+        const frameRect = frame.getBoundingClientRect()
+        const els = [...frame.querySelectorAll<HTMLElement>('.comp')]
+        let elIdx = 0
+        for (const c of spec.comps as { type: string }[]) {
+          const el = els[elIdx]
+          if (!el) break
+          elIdx++
+          const r = el.getBoundingClientRect()
+          let x = ((r.left - frameRect.left) / PHONE_W) * 100
+          let y = ((r.top - frameRect.top) / PHONE_H) * 100
+          let w = (r.width / PHONE_W) * 100
+          let h = (r.height / PHONE_H) * 100
+          if (y >= 100 || h <= 0.5) continue // 被视口裁掉的组件不建热区
+          if (y + h > 100) h = 100 - y
+          if (x + w > 100) w = 100 - x
+          x = Math.max(0, +x.toFixed(1)); y = Math.max(0, +y.toFixed(1))
+          w = +w.toFixed(1); h = +h.toFixed(1)
+          const mod = COMP_MODULE[c.type] ?? { id: `gen-${c.type}`, name: c.type, desc: '生成组件' }
+          if (!modulesUsed.has(mod.id)) {
+            modulesUsed.set(mod.id, { id: mod.id, name: mod.name, desc: mod.desc, states: [{ id: 'default', name: '默认' }] })
+          }
+          let inst = instMap.get(mod.id)
+          if (!inst) {
+            inst = { moduleId: mod.id, hotzones: {} }
+            instMap.set(mod.id, inst)
+          }
+          const hz = inst.hotzones[sd.id]
+          if (hz) {
+            // 同页同状态同类型组件出现多次 → 取包围盒并集
+            const nx = Math.min(hz.x, x), ny = Math.min(hz.y, y)
+            hz.w = +(Math.max(hz.x + hz.w, x + w) - nx).toFixed(1)
+            hz.h = +(Math.max(hz.y + hz.h, y + h) - ny).toFixed(1)
+            hz.x = nx; hz.y = ny
+          } else {
+            inst.hotzones[sd.id] = { x, y, w, h }
+          }
+        }
+
+        const image = await snapshot(frame)
+        host.removeChild(frame)
+        pageStates.push({ id: sd.id, name: sd.name, image, note: sd.desc })
+        done++
+        onProgress(done, totalShots, n.title)
+      }
 
       pages.push({
         id: n.id,
@@ -160,11 +177,9 @@ export async function compileFlow(
         name: n.title,
         seq: seq.get(n.id),
         desc: n.desc,
-        states: [{ id: 'default', name: '默认', image }],
+        states: pageStates,
         moduleInstances: [...instMap.values()],
       })
-      done++
-      onProgress(done, pageNodes.length, n.title)
     }
   } finally {
     host.remove()

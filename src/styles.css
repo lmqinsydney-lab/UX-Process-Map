@@ -393,3 +393,46 @@ button { font-family: inherit; cursor: pointer; }
 .pg .comp { animation: none; }
 .wire { filter: saturate(0) contrast(0.92); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- 第一步节点编辑增强 ---------- */
+.fgh {
+  width: 9px; height: 9px; background: #fff; border: 1.5px solid #818cf8; border-radius: 50%;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.react-flow__node:hover .fgh, .react-flow__node.selected .fgh { opacity: 1; }
+.fg-node { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+.react-flow__node:hover .fg-node { border-color: #b6b3f0; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.1); }
+.react-flow__node.selected .fg-node { border-color: #4f46e5; box-shadow: 0 6px 24px rgba(79, 70, 229, 0.18); }
+.react-flow__node:hover .fg-branch-diamond { background: #ffedd5; }
+.react-flow__node.selected .fg-branch-diamond { border-width: 2.5px; background: #ffedd5; }
+.fg-states-badge {
+  float: right; font-size: 10px; color: #4f46e5; background: #eef0fe; border-radius: 999px; padding: 1px 8px;
+}
+.fg-panel {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: 300px; z-index: 20;
+  background: #fff; border: 1px solid #dfe2e8; border-radius: 12px; padding: 14px;
+  box-shadow: 0 12px 40px rgba(31, 35, 41, 0.12); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.fg-panel-head { display: flex; align-items: center; gap: 8px; }
+.fg-panel-title { font-size: 14px; font-weight: 600; flex: 1; }
+.fg-del {
+  font-size: 12px; color: #dc2626; background: #fff; border: 1px solid #f5c6c6; border-radius: 8px; padding: 4px 10px;
+}
+.fg-del:hover { background: #fef2f2; }
+.fg-field { display: flex; flex-direction: column; gap: 6px; }
+.fg-field > span { font-size: 12px; color: #9ca3af; }
+.fg-field input, .fg-field textarea {
+  border: 1px solid #dfe2e8; border-radius: 8px; padding: 7px 10px; font-size: 13px; outline: none;
+  font-family: inherit; resize: vertical;
+}
+.fg-field input:focus, .fg-field textarea:focus { border-color: #4f46e5; }
+.fg-field-tip { font-size: 11px; color: #b6bac2; margin: 4px 0 0; line-height: 1.5; }
+.fg-states { display: flex; flex-direction: column; gap: 6px; }
+.fg-state-row { display: flex; gap: 6px; }
+.fg-state-row input { flex: 1; }
+.fg-state-del {
+  width: 30px; border: 1px solid #dfe2e8; border-radius: 8px; background: #fff; color: #9ca3af; font-size: 12px;
+}
+.fg-state-del:hover:not(:disabled) { color: #dc2626; border-color: #f5c6c6; }
+.fg-state-del:disabled { opacity: 0.4; cursor: default; }

@@ -1,5 +1,19 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Background, Controls, Handle, MarkerType, Position, ReactFlow, ReactFlowProvider, type NodeProps } from '@xyflow/react'
+import {
+  Background,
+  Controls,
+  Handle,
+  MarkerType,
+  Position,
+  ReactFlow,
+  ReactFlowProvider,
+  applyNodeChanges,
+  type Connection,
+  type Edge,
+  type Node,
+  type NodeChange,
+  type NodeProps,
+} from '@xyflow/react'
 import { GENERIC_TEMPLATE, SAMPLE_PRD, TEMPLATES, layoutFlow, parsePrd } from '../../flowgen/templates'
 import MeasureFallback from '../MeasureFallback'
 import type { Flow, FlowNodeT } from '../../flowgen/compile'
@@ -12,20 +26,22 @@ function FlowGenNode(props: NodeProps) {
   if (n.type === 'branch') {
     return (
       <div className="fg-branch">
-        <Handle type="target" position={Position.Left} className="hh" />
-        <Handle type="source" position={Position.Right} className="hh" />
+        <Handle type="target" position={Position.Left} className="fgh" />
+        <Handle type="source" position={Position.Right} className="fgh" />
         <div className="fg-branch-diamond" />
         <div className="fg-branch-name">{n.title}</div>
       </div>
     )
   }
+  const states = n.states?.length ? n.states : null
   return (
     <div className="fg-node">
-      <Handle type="target" position={Position.Left} className="hh" />
-      <Handle type="source" position={Position.Right} className="hh" />
+      <Handle type="target" position={Position.Left} className="fgh" />
+      <Handle type="source" position={Position.Right} className="fgh" />
       <span className="fg-type" style={{ color: TYPE_COLOR[n.type], borderColor: TYPE_COLOR[n.type] }}>
         {TYPE_NAME[n.type]}
       </span>
+      {states && <span className="fg-states-badge">{states.length} 个状态</span>}
       <div className="fg-title">{n.title}</div>
       {n.desc && <div className="fg-desc">{n.desc}</div>}
     </div>
@@ -41,17 +57,48 @@ const CHIPS = [
 ]
 
 interface Props {
-  flow: Flow | null
-  onFlowChange: (flow: Flow | null) => void
-  onNext: () => void
+  onNext: (flow: Flow) => void
   busy: boolean
 }
 
-export default function FlowStep({ flow, onFlowChange, onNext, busy }: Props) {
+export default function FlowStep({ onNext, busy }: Props) {
   const [prompt, setPrompt] = useState('')
   const [genStep, setGenStep] = useState<string | null>(null)
   const [prdOpen, setPrdOpen] = useState(false)
   const [prdText, setPrdText] = useState('')
+  const [flowName, setFlowName] = useState('')
+  const [rfNodes, setRfNodes] = useState<Node[]>([])
+  const [rfEdges, setRfEdges] = useState<Edge[]>([])
+  const [seq, setSeq] = useState(1)
+
+  const selected = rfNodes.find((n) => n.selected)
+  const selNode = selected ? ((selected.data as { node: FlowNodeT }).node ?? null) : null
+
+  /** 更新某节点的业务数据（名称/简介/状态）；用函数式更新避免连续操作读到陈旧数据 */
+  const patchNode = useCallback((id: string, patch: Partial<FlowNodeT> | ((cur: FlowNodeT) => Partial<FlowNodeT>)) => {
+    setRfNodes((ns) =>
+      ns.map((n) => {
+        if (n.id !== id) return n
+        const cur = (n.data as { node: FlowNodeT }).node
+        const p = typeof patch === 'function' ? patch(cur) : patch
+        return { ...n, data: { node: { ...cur, ...p } } }
+      }),
+    )
+  }, [])
+
+  const toRfEdge = (from: string, to: string, label: string | undefined, i: number | string): Edge => ({
+    id: `fe${i}`,
+    source: from,
+    target: to,
+    label,
+    type: 'default',
+    markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#818cf8' },
+    style: { stroke: '#818cf8', strokeWidth: 1.6 },
+    labelStyle: { fontSize: 11, fill: '#4b5563' },
+    labelBgStyle: { fill: '#ffffff', stroke: '#d6d9df' },
+    labelBgPadding: [6, 3] as [number, number],
+    labelBgBorderRadius: 8,
+  })
 
   const generate = useCallback(
     async (text: string, fromPrd: boolean) => {
@@ -79,45 +126,79 @@ export default function FlowStep({ flow, onFlowChange, onNext, busy }: Props) {
         edges: tpl.edges.map((e: { from: string; to: string; label?: string }) => ({ ...e })),
       }
       layoutFlow(f)
+      const byDepth = new Map<number, FlowNodeT[]>()
+      for (const n of f.nodes) {
+        const d = n.depth ?? 0
+        if (!byDepth.has(d)) byDepth.set(d, [])
+        byDepth.get(d)!.push(n)
+      }
+      setFlowName(f.name)
+      setRfNodes(
+        f.nodes.map((n) => {
+          const col = byDepth.get(n.depth ?? 0)!
+          const row = col.indexOf(n)
+          return {
+            id: n.id,
+            type: 'flowGen',
+            position: { x: (n.depth ?? 0) * 280, y: (row - (col.length - 1) / 2) * 150 },
+            data: { node: n },
+          }
+        }),
+      )
+      setRfEdges(f.edges.map((e, i) => toRfEdge(e.from, e.to, e.label, i)))
       setGenStep(null)
-      onFlowChange(f)
     },
-    [genStep, onFlowChange],
+    [genStep],
   )
 
-  const graph = useMemo(() => {
-    if (!flow) return { nodes: [], edges: [] }
-    const byDepth = new Map<number, FlowNodeT[]>()
-    for (const n of flow.nodes) {
-      const d = n.depth ?? 0
-      if (!byDepth.has(d)) byDepth.set(d, [])
-      byDepth.get(d)!.push(n)
-    }
-    const nodes = flow.nodes.map((n) => {
-      const col = byDepth.get(n.depth ?? 0)!
-      const row = col.indexOf(n)
-      return {
-        id: n.id,
-        type: 'flowGen',
-        position: { x: (n.depth ?? 0) * 280, y: (row - (col.length - 1) / 2) * 150 },
-        data: { node: n },
+  const addNode = useCallback(
+    (type: 'page' | 'branch') => {
+      const id = `n${seq}`
+      setSeq((v) => v + 1)
+      const node: FlowNodeT = {
+        id,
+        type,
+        title: type === 'branch' ? '新判断' : '新页面',
+        desc: type === 'branch' ? '判断条件说明' : '页面简介',
       }
+      // 放在当前视野内已有节点的右下方向，避免重叠
+      const maxX = rfNodes.length ? Math.max(...rfNodes.map((n) => n.position.x)) : 0
+      setRfNodes((ns) => [
+        ...ns.map((n) => ({ ...n, selected: false })),
+        { id, type: 'flowGen', position: { x: maxX + 280, y: 40 }, data: { node }, selected: true },
+      ])
+    },
+    [rfNodes, seq],
+  )
+
+  const deleteNode = useCallback((id: string) => {
+    setRfNodes((ns) => ns.filter((n) => n.id !== id))
+    setRfEdges((es) => es.filter((e) => e.source !== id && e.target !== id))
+  }, [])
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setRfNodes((ns) => applyNodeChanges(changes, ns))
+  }, [])
+
+  const onConnect = useCallback((c: Connection) => {
+    if (!c.source || !c.target || c.source === c.target) return
+    setRfEdges((es) => {
+      if (es.some((e) => e.source === c.source && e.target === c.target)) return es
+      return [...es, toRfEdge(c.source, c.target, undefined, `c${es.length}-${c.source}`)]
     })
-    const edges = flow.edges.map((e, i) => ({
-      id: `fe${i}`,
-      source: e.from,
-      target: e.to,
-      label: e.label,
-      type: 'default',
-      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#818cf8' },
-      style: { stroke: '#818cf8', strokeWidth: 1.6 },
-      labelStyle: { fontSize: 11, fill: '#4b5563' },
-      labelBgStyle: { fill: '#ffffff', stroke: '#d6d9df' },
-      labelBgPadding: [6, 3] as [number, number],
-      labelBgBorderRadius: 8,
-    }))
-    return { nodes, edges }
-  }, [flow])
+  }, [])
+
+  const buildFlow = useCallback((): Flow => {
+    const f: Flow = {
+      name: flowName || '未命名流程',
+      nodes: rfNodes.map((n) => ({ ...(n.data as { node: FlowNodeT }).node })),
+      edges: rfEdges.map((e) => ({ from: e.source, to: e.target, label: typeof e.label === 'string' ? e.label : undefined })),
+    }
+    layoutFlow(f)
+    return f
+  }, [flowName, rfNodes, rfEdges])
+
+  const graphEdges = useMemo(() => rfEdges, [rfEdges])
 
   return (
     <div className="fg-root">
@@ -143,24 +224,32 @@ export default function FlowStep({ flow, onFlowChange, onNext, busy }: Props) {
             </button>
           ))}
         </div>
+        {rfNodes.length > 0 && (
+          <div className="fg-chips">
+            <button className="fg-chip" onClick={() => addNode('page')}>＋ 页面节点</button>
+            <button className="fg-chip" onClick={() => addNode('branch')}>＋ 判断节点</button>
+          </div>
+        )}
         <span className="fg-spacer" />
-        <button className="fg-next" disabled={!flow || busy} onClick={onNext} title={flow ? undefined : '先生成流程图'}>
+        <button className="fg-next" disabled={!rfNodes.length || busy} onClick={() => onNext(buildFlow())} title={rfNodes.length ? undefined : '先生成流程图'}>
           下一步：生成可视化体验链路 →
         </button>
       </div>
       <div className="fg-canvas">
-        {!flow && !genStep && (
+        {!rfNodes.length && !genStep && (
           <div className="fg-empty">
             <div className="fg-empty-title">第一步 · 一句话生成流程</div>
-            <div className="fg-empty-sub">输入一句话或粘贴 PRD，生成页面流程图；确认后进入下一步自动生成可视化体验链路</div>
+            <div className="fg-empty-sub">输入一句话或粘贴 PRD，生成页面流程图；节点可拖拽、增删、编辑与配置状态，确认后进入下一步自动生成可视化体验链路</div>
           </div>
         )}
         {genStep && <div className="fg-genmask">{genStep}</div>}
         <ReactFlowProvider>
           <ReactFlow
-            nodes={graph.nodes}
-            edges={graph.edges}
+            nodes={rfNodes}
+            edges={graphEdges}
             nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onConnect={onConnect}
             fitView
             fitViewOptions={{ padding: 0.18 }}
             minZoom={0.2}
@@ -169,15 +258,79 @@ export default function FlowStep({ flow, onFlowChange, onNext, busy }: Props) {
             zoomOnScroll={false}
             zoomOnPinch
             zoomOnDoubleClick={false}
-            nodesConnectable={false}
-            elementsSelectable={false}
-            proOptions={{ hideAttribution: false }}
+            nodesConnectable
+            elementsSelectable
           >
             <Background gap={24} size={1.5} color="#e3e5ea" />
             <Controls showInteractive={false} />
-            <MeasureFallback dep={flow} refit />
+            <MeasureFallback dep={rfNodes.length} refit />
           </ReactFlow>
         </ReactFlowProvider>
+        {selNode && (
+          <aside className="fg-panel">
+            <div className="fg-panel-head">
+              <span className="fg-type" style={{ color: TYPE_COLOR[selNode.type], borderColor: TYPE_COLOR[selNode.type] }}>
+                {TYPE_NAME[selNode.type]}
+              </span>
+              <span className="fg-panel-title">节点详情</span>
+              <button className="fg-del" onClick={() => deleteNode(selNode.id)}>删除节点</button>
+            </div>
+            <label className="fg-field">
+              <span>名称</span>
+              <input value={selNode.title} onChange={(e) => patchNode(selNode.id, { title: e.target.value })} />
+            </label>
+            <label className="fg-field">
+              <span>简介</span>
+              <textarea rows={3} value={selNode.desc ?? ''} onChange={(e) => patchNode(selNode.id, { desc: e.target.value })} />
+            </label>
+            {selNode.type !== 'branch' && (
+              <div className="fg-field">
+                <span>页面状态（{selNode.states?.length ?? 1} 个）</span>
+                <div className="fg-states">
+                  {(selNode.states ?? [{ id: 'default', name: '默认' }]).map((s, i, arr) => (
+                    <div key={s.id} className="fg-state-row">
+                      <input
+                        value={s.name}
+                        onChange={(e) =>
+                          patchNode(selNode.id, (cur) => ({
+                            states: (cur.states ?? [{ id: 'default', name: '默认' }]).map((x) =>
+                              x.id === s.id ? { ...x, name: e.target.value } : x,
+                            ),
+                          }))
+                        }
+                      />
+                      <button
+                        className="fg-state-del"
+                        disabled={arr.length <= 1}
+                        title={arr.length <= 1 ? '至少保留一个状态' : '删除该状态'}
+                        onClick={() =>
+                          patchNode(selNode.id, (cur) => {
+                            const next = (cur.states ?? []).filter((x) => x.id !== s.id)
+                            return { states: next.length ? next : undefined }
+                          })
+                        }
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    className="fg-chip"
+                    onClick={() =>
+                      patchNode(selNode.id, (cur) => {
+                        const list = cur.states ?? [{ id: 'default', name: '默认' }]
+                        return { states: [...list, { id: `s${Date.now() % 1000000}-${list.length}`, name: `状态 ${list.length + 1}` }] }
+                      })
+                    }
+                  >
+                    ＋ 添加状态
+                  </button>
+                </div>
+                <p className="fg-field-tip">每个状态会在下一步各生成一版页面，进入链路后可切换查看</p>
+              </div>
+            )}
+          </aside>
+        )}
       </div>
       {prdOpen && (
         <div className="fg-modal" onMouseDown={(e) => e.target === e.currentTarget && setPrdOpen(false)}>
