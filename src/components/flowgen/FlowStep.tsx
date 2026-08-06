@@ -231,9 +231,6 @@ export default function FlowStep({ onNext, busy }: Props) {
           </div>
         )}
         <span className="fg-spacer" />
-        <button className="fg-next" disabled={!rfNodes.length || busy} onClick={() => onNext(buildFlow())} title={rfNodes.length ? undefined : '先生成流程图'}>
-          下一步：生成可视化体验链路 →
-        </button>
       </div>
       <div className="fg-canvas">
         {!rfNodes.length && !genStep && (
@@ -243,6 +240,12 @@ export default function FlowStep({ onNext, busy }: Props) {
           </div>
         )}
         {genStep && <div className="fg-genmask">{genStep}</div>}
+        {rfNodes.length > 0 && (
+          <button className="fg-next-float" disabled={busy} onClick={() => onNext(buildFlow())}>
+            <span className="fg-next-main">下一步 · 生成可视化体验链路</span>
+            <span className="fg-next-sub">为每个页面节点自动生成初版设计稿 →</span>
+          </button>
+        )}
         <ReactFlowProvider>
           <ReactFlow
             nodes={rfNodes}
