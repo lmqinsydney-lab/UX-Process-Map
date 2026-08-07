@@ -59,9 +59,11 @@ const CHIPS = [
 interface Props {
   onNext: (flow: Flow) => void
   busy: boolean
+  /** 流程发生语义性修改（重新生成/增删节点/连线/编辑内容）时触发，用于使已生成的链路失效 */
+  onFlowChange?: () => void
 }
 
-export default function FlowStep({ onNext, busy }: Props) {
+export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
   const [prompt, setPrompt] = useState('')
   const [genStep, setGenStep] = useState<string | null>(null)
   const [prdOpen, setPrdOpen] = useState(false)
@@ -84,7 +86,8 @@ export default function FlowStep({ onNext, busy }: Props) {
         return { ...n, data: { node: { ...cur, ...p } } }
       }),
     )
-  }, [])
+    onFlowChange?.()
+  }, [onFlowChange])
 
   const toRfEdge = (from: string, to: string, label: string | undefined, i: number | string): Edge => ({
     id: `fe${i}`,
@@ -147,8 +150,9 @@ export default function FlowStep({ onNext, busy }: Props) {
       )
       setRfEdges(f.edges.map((e, i) => toRfEdge(e.from, e.to, e.label, i)))
       setGenStep(null)
+      onFlowChange?.()
     },
-    [genStep],
+    [genStep, onFlowChange],
   )
 
   const addNode = useCallback(
@@ -167,18 +171,22 @@ export default function FlowStep({ onNext, busy }: Props) {
         ...ns.map((n) => ({ ...n, selected: false })),
         { id, type: 'flowGen', position: { x: maxX + 280, y: 40 }, data: { node }, selected: true },
       ])
+      onFlowChange?.()
     },
-    [rfNodes, seq],
+    [rfNodes, seq, onFlowChange],
   )
 
   const deleteNode = useCallback((id: string) => {
     setRfNodes((ns) => ns.filter((n) => n.id !== id))
     setRfEdges((es) => es.filter((e) => e.source !== id && e.target !== id))
-  }, [])
+    onFlowChange?.()
+  }, [onFlowChange])
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setRfNodes((ns) => applyNodeChanges(changes, ns))
-  }, [])
+    // 拖拽位置/选中不算修改；键盘删除节点算
+    if (changes.some((c) => c.type === 'remove')) onFlowChange?.()
+  }, [onFlowChange])
 
   const onConnect = useCallback((c: Connection) => {
     if (!c.source || !c.target || c.source === c.target) return
@@ -186,7 +194,8 @@ export default function FlowStep({ onNext, busy }: Props) {
       if (es.some((e) => e.source === c.source && e.target === c.target)) return es
       return [...es, toRfEdge(c.source, c.target, undefined, `c${es.length}-${c.source}`)]
     })
-  }, [])
+    onFlowChange?.()
+  }, [onFlowChange])
 
   const buildFlow = useCallback((): Flow => {
     const f: Flow = {

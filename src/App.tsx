@@ -229,7 +229,7 @@ export default function App() {
         )}
       </main>
       <div style={{ display: step === 'flow' ? 'contents' : 'none' }}>
-        <FlowStep onNext={runPipeline} busy={!!pipe} />
+        <FlowStep onNext={runPipeline} busy={!!pipe} onFlowChange={() => setHasLink(false)} />
       </div>
       {pipe && (
         <div className="pipe-mask">
