@@ -3,6 +3,7 @@ import { ReactFlowProvider, type ReactFlowInstance } from '@xyflow/react'
 import CanvasOverview from './components/CanvasOverview'
 import FocusPanel from './components/focus/FocusPanel'
 import FlowStep from './components/flowgen/FlowStep'
+import GenStep from './components/flowgen/GenStep'
 import { compileFlow, type Flow } from './flowgen/compile'
 import { demoProject, getPage, project, setProject } from './data/loader'
 import { CARD_W, FOCUS_CARD_H, PANEL_W, type FocusState } from './layout'
@@ -12,10 +13,13 @@ export default function App() {
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
-  // 两步流程：第一步一句话生流程，第二步可视化体验链路
-  const [step, setStep] = useState<'flow' | 'canvas'>(project === demoProject ? 'flow' : 'canvas')
-  // 尚未生成过链路时，第二步入口不可用（先流程生成，再可视化链路）
+  // 前置生成页（gen）→ 流程编辑（flow）⇄ 可视化链路（canvas）
+  const [step, setStep] = useState<'gen' | 'flow' | 'canvas'>(project === demoProject ? 'gen' : 'canvas')
+  // 尚未生成过链路时，「可视化链路」tab 不可用（先流程生成，再可视化链路）
   const [hasLink, setHasLink] = useState(project !== demoProject)
+  // 前置页生成的流程，交给流程编辑页装载；version 递增触发重新装载
+  const [genFlow, setGenFlow] = useState<Flow | null>(null)
+  const [flowVersion, setFlowVersion] = useState(0)
   const [pipe, setPipe] = useState<{ done: number; total: number; label: string } | null>(null)
   const [projVersion, setProjVersion] = useState(0)
 
@@ -36,6 +40,13 @@ export default function App() {
       setPipe(null)
     }
   }, [pipe])
+
+  const onFlowGenerated = useCallback((flow: Flow) => {
+    setGenFlow(flow)
+    setFlowVersion((v) => v + 1)
+    setHasLink(false)
+    setStep('flow')
+  }, [])
 
   const loadDemoProject = useCallback(() => {
     setProject(demoProject, false)
@@ -161,27 +172,29 @@ export default function App() {
       <header className="topbar">
         <span className="logo">◍</span>
         <span className="title">可视化体验链路</span>
-        <div className="step-tabs">
-          <button className={step === 'flow' ? 'on' : ''} onClick={() => setStep('flow')}>① 流程生成</button>
-          <button
-            className={step === 'canvas' ? 'on' : ''}
-            disabled={!hasLink}
-            title={hasLink ? undefined : '先在第一步生成流程，生成链路后自动进入'}
-            onClick={() => setStep('canvas')}
-          >② 可视化链路</button>
-        </div>
+        {step !== 'gen' && (
+          <div className="step-tabs">
+            <button className={step === 'flow' ? 'on' : ''} onClick={() => setStep('flow')}>① 流程生成</button>
+            <button
+              className={step === 'canvas' ? 'on' : ''}
+              disabled={!hasLink}
+              title={hasLink ? undefined : '先生成流程，生成链路后自动进入'}
+              onClick={() => setStep('canvas')}
+            >② 可视化链路</button>
+          </div>
+        )}
         {step === 'canvas' && <span className="subtitle">{project.project.name}</span>}
         <span className="topbar-hint">
-          {step === 'flow'
-            ? '一句话或 PRD 生成流程图 → 点「下一步」自动生成链路 1.0'
-            : '点击页面卡片聚焦 · 点击「n 个状态」角标展开 · 点击连线看事件与条件'}
+          {step === 'gen' && '一句话或 PRD 自动生成流程图，生成后进入流程编辑'}
+          {step === 'flow' && '编辑节点与状态 → 点「生成可视化链路」进入链路 1.0'}
+          {step === 'canvas' && '点击页面卡片聚焦 · 点击「n 个状态」角标展开 · 点击连线看事件与条件'}
         </span>
         {step === 'canvas' && (
           <button className="fg-chip" onClick={loadDemoProject}>示例项目</button>
         )}
         <span className="ver">Demo</span>
       </header>
-      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)} style={{ display: step === 'flow' ? 'none' : undefined }}>
+      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)} style={{ display: step !== 'canvas' ? 'none' : undefined }}>
         <ReactFlowProvider key={projVersion}>
           <CanvasOverview
             expanded={expanded}
@@ -228,8 +241,18 @@ export default function App() {
           />
         )}
       </main>
+      <div style={{ display: step === 'gen' ? 'contents' : 'none' }}>
+        <GenStep onGenerated={onFlowGenerated} />
+      </div>
       <div style={{ display: step === 'flow' ? 'contents' : 'none' }}>
-        <FlowStep onNext={runPipeline} busy={!!pipe} onFlowChange={() => setHasLink(false)} />
+        <FlowStep
+          flow={genFlow}
+          flowVersion={flowVersion}
+          onNext={runPipeline}
+          busy={!!pipe}
+          onFlowChange={() => setHasLink(false)}
+          onBackToGen={() => setStep('gen')}
+        />
       </div>
       {pipe && (
         <div className="pipe-mask">

@@ -16,12 +16,16 @@
 - 常用: `npx tsc --noEmit`、`npm run build`、`node scripts/validate-data.mjs`（数据校验+模块同一性警告门禁）
 - 惯例：每轮改动 → tsc → 浏览器验证 → commit（中文、Co-Authored-By Claude Fable 5）→ push → deploy
 
-## 3. 当前产品形态（两步，单 React 应用）
+## 3. 当前产品形态（前置生成页 + 两步 tab，单 React 应用）
 
-**第一步 · 流程生成**（`src/components/flowgen/FlowStep.tsx`，常驻挂载保留现场）：
-- 一句话/PRD 生成流程图（mock：关键词模板 车险/电商/登录/外卖 + PRD 正则，`src/flowgen/templates.ts`，移植自同事 FlowCraft demo，原件归档 `docs/reference/flowcraft-demo.html`）
+**前置页 · 一句话/PRD 生成**（`src/components/flowgen/GenStep.tsx`，居中 hero 布局，无 step-tabs）：
+- 一句话输入 + 模板 chips / PRD 内联 textarea（mock：关键词模板 车险/电商/登录/外卖 + PRD 正则，`src/flowgen/templates.ts`，移植自同事 FlowCraft demo，原件归档 `docs/reference/flowcraft-demo.html`）
+- 生成完成 `onGenerated(flow)` → App 装入 genFlow/flowVersion → 跳转流程编辑页
+
+**第一步 · 流程编辑**（`src/components/flowgen/FlowStep.tsx`，常驻挂载保留现场；工具栏「← 重新输入」可回前置页，无流程时空态含「去生成流程」按钮）：
 - 节点可编辑：hover/选中态、拖拽、增删节点（页面/判断）、拖桩连线、右侧详情面板（名称/简介/删除）、**节点多状态增删改**（面板状态列表，节点显示"n 个状态"角标）
 - 底部居中强 CTA「生成可视化链路」（唯一出口，无逐节点手动生图）
+- **链路失效门控**：未生成链路或流程被语义性修改（重新生成/增删节点/连线/编辑内容，拖拽位置与选中除外）时 `hasLink=false`，「② 可视化链路」tab 禁用；跑完管线或加载示例项目解锁
 
 **管线**（`src/flowgen/compile.ts`）：逐节点×逐状态 mock 生图（`src/flowgen/pagegen.ts`，迷你设计系统 buildSpec/renderPageBody，// @ts-nocheck 移植代码）→ 离屏渲染测量 `.comp` 组件包围盒 = **模块热区**（组件清单即模块划分，COMP_MODULE 映射 18 种组件→全局模块）→ 截图（toPng 3.5s 超时自适应降级 foreignObject SVG 快照，`pngUnavailable` 会话级标记）→ 编译 project.json → setProject → 进入第二步。判断节点→decisions；主按钮挂 clickEdgeId=首条主流程出边。
 

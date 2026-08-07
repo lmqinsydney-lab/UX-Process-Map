@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Background,
   Controls,
@@ -14,7 +14,7 @@ import {
   type NodeChange,
   type NodeProps,
 } from '@xyflow/react'
-import { GENERIC_TEMPLATE, SAMPLE_PRD, TEMPLATES, layoutFlow, parsePrd } from '../../flowgen/templates'
+import { layoutFlow } from '../../flowgen/templates'
 import MeasureFallback from '../MeasureFallback'
 import type { Flow, FlowNodeT } from '../../flowgen/compile'
 
@@ -49,25 +49,20 @@ function FlowGenNode(props: NodeProps) {
 }
 const nodeTypes = { flowGen: FlowGenNode }
 
-const CHIPS = [
-  { label: '车险投保', p: '做一个车险投保流程' },
-  { label: '电商下单', p: '做一个电商购物下单流程' },
-  { label: '外卖点餐', p: '做一个外卖点餐 App' },
-  { label: '登录注册', p: '做一个 App 登录注册流程' },
-]
-
 interface Props {
+  /** 前置生成页产出的流程（已带 depth 布局）；为 null 表示尚未生成 */
+  flow: Flow | null
+  /** flow 每次重新生成递增，用于触发装载 */
+  flowVersion: number
   onNext: (flow: Flow) => void
   busy: boolean
-  /** 流程发生语义性修改（重新生成/增删节点/连线/编辑内容）时触发，用于使已生成的链路失效 */
+  /** 流程发生语义性修改（增删节点/连线/编辑内容）时触发，用于使已生成的链路失效 */
   onFlowChange?: () => void
+  /** 返回前置生成页重新输入 */
+  onBackToGen: () => void
 }
 
-export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
-  const [prompt, setPrompt] = useState('')
-  const [genStep, setGenStep] = useState<string | null>(null)
-  const [prdOpen, setPrdOpen] = useState(false)
-  const [prdText, setPrdText] = useState('')
+export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange, onBackToGen }: Props) {
   const [flowName, setFlowName] = useState('')
   const [rfNodes, setRfNodes] = useState<Node[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
@@ -103,57 +98,31 @@ export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
     labelBgBorderRadius: 8,
   })
 
-  const generate = useCallback(
-    async (text: string, fromPrd: boolean) => {
-      if (genStep) return
-      const steps = fromPrd
-        ? ['正在解析 PRD 文档…', '识别页面与流程关键词…', '构建节点关系图…', '自动布局中…']
-        : ['正在理解需求…', '拆解用户旅程与关键场景…', '生成页面节点与分支…', '自动布局中…']
-      for (const s of steps) {
-        setGenStep(s)
-        await new Promise((r) => setTimeout(r, 380))
-      }
-      let tpl
-      if (fromPrd) {
-        tpl = parsePrd(text)
-      } else {
-        tpl = TEMPLATES.find((t: { match: RegExp }) => t.match.test(text))
-        if (!tpl) {
-          const topic = text.replace(/做一个|帮我做|设计|流程|的|一个|App|app/g, '').trim().slice(0, 6) || '产品'
-          tpl = GENERIC_TEMPLATE(topic)
+  // 前置页每次生成新流程后装载到画布（flowVersion 递增触发）
+  useEffect(() => {
+    if (!flow) return
+    const byDepth = new Map<number, FlowNodeT[]>()
+    for (const n of flow.nodes) {
+      const d = n.depth ?? 0
+      if (!byDepth.has(d)) byDepth.set(d, [])
+      byDepth.get(d)!.push(n)
+    }
+    setFlowName(flow.name)
+    setRfNodes(
+      flow.nodes.map((n) => {
+        const col = byDepth.get(n.depth ?? 0)!
+        const row = col.indexOf(n)
+        return {
+          id: n.id,
+          type: 'flowGen',
+          position: { x: (n.depth ?? 0) * 280, y: (row - (col.length - 1) / 2) * 150 },
+          data: { node: { ...n } },
         }
-      }
-      const f: Flow = {
-        name: tpl.name,
-        nodes: tpl.nodes.map((n: FlowNodeT) => ({ ...n })),
-        edges: tpl.edges.map((e: { from: string; to: string; label?: string }) => ({ ...e })),
-      }
-      layoutFlow(f)
-      const byDepth = new Map<number, FlowNodeT[]>()
-      for (const n of f.nodes) {
-        const d = n.depth ?? 0
-        if (!byDepth.has(d)) byDepth.set(d, [])
-        byDepth.get(d)!.push(n)
-      }
-      setFlowName(f.name)
-      setRfNodes(
-        f.nodes.map((n) => {
-          const col = byDepth.get(n.depth ?? 0)!
-          const row = col.indexOf(n)
-          return {
-            id: n.id,
-            type: 'flowGen',
-            position: { x: (n.depth ?? 0) * 280, y: (row - (col.length - 1) / 2) * 150 },
-            data: { node: n },
-          }
-        }),
-      )
-      setRfEdges(f.edges.map((e, i) => toRfEdge(e.from, e.to, e.label, i)))
-      setGenStep(null)
-      onFlowChange?.()
-    },
-    [genStep, onFlowChange],
-  )
+      }),
+    )
+    setRfEdges(flow.edges.map((e, i) => toRfEdge(e.from, e.to, e.label, i)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowVersion])
 
   const addNode = useCallback(
     (type: 'page' | 'branch') => {
@@ -212,27 +181,8 @@ export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
   return (
     <div className="fg-root">
       <div className="fg-toolbar">
-        <div className="fg-seg">
-          <button className={!prdOpen ? 'on' : ''} onClick={() => setPrdOpen(false)}>一句话</button>
-          <button onClick={() => setPrdOpen(true)}>PRD 文档</button>
-        </div>
-        <input
-          className="fg-input"
-          value={prompt}
-          placeholder="一句话描述产品或流程，如：做一个车险投保流程"
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && prompt.trim() && generate(prompt, false)}
-        />
-        <button className="fg-gen" disabled={!!genStep} onClick={() => prompt.trim() && generate(prompt, false)}>
-          {genStep ? '生成中…' : '生成流程'}
-        </button>
-        <div className="fg-chips">
-          {CHIPS.map((c) => (
-            <button key={c.label} className="fg-chip" onClick={() => { setPrompt(c.p); generate(c.p, false) }}>
-              {c.label}
-            </button>
-          ))}
-        </div>
+        <button className="fg-chip" onClick={onBackToGen}>← 重新输入</button>
+        {flowName && <span className="fg-flow-name">{flowName}</span>}
         {rfNodes.length > 0 && (
           <div className="fg-chips">
             <button className="fg-chip" onClick={() => addNode('page')}>＋ 页面节点</button>
@@ -242,13 +192,13 @@ export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
         <span className="fg-spacer" />
       </div>
       <div className="fg-canvas">
-        {!rfNodes.length && !genStep && (
+        {!rfNodes.length && (
           <div className="fg-empty">
-            <div className="fg-empty-title">第一步 · 一句话生成流程</div>
-            <div className="fg-empty-sub">输入一句话或粘贴 PRD，生成页面流程图；节点可拖拽、增删、编辑与配置状态，确认后进入下一步自动生成可视化体验链路</div>
+            <div className="fg-empty-title">还没有流程</div>
+            <div className="fg-empty-sub">先在前置页输入一句话或粘贴 PRD 生成流程图，节点可拖拽、增删、编辑与配置状态</div>
+            <button className="fg-gen" onClick={onBackToGen}>去生成流程</button>
           </div>
         )}
-        {genStep && <div className="fg-genmask">{genStep}</div>}
         {rfNodes.length > 0 && (
           <button className="fg-next-float" disabled={busy} onClick={() => onNext(buildFlow())}>
             <span className="fg-next-main">生成可视化链路</span>
@@ -343,22 +293,6 @@ export default function FlowStep({ onNext, busy, onFlowChange }: Props) {
           </aside>
         )}
       </div>
-      {prdOpen && (
-        <div className="fg-modal" onMouseDown={(e) => e.target === e.currentTarget && setPrdOpen(false)}>
-          <div className="fg-modal-card">
-            <div className="fg-modal-title">粘贴 PRD 文档</div>
-            <textarea value={prdText} placeholder="粘贴 PRD 内容，将自动识别页面与流程" onChange={(e) => setPrdText(e.target.value)} />
-            <div className="fg-modal-foot">
-              <button className="fg-chip" onClick={() => setPrdText(SAMPLE_PRD)}>填入示例 PRD</button>
-              <span className="fg-spacer" />
-              <button className="fg-chip" onClick={() => setPrdOpen(false)}>取消</button>
-              <button className="fg-gen" onClick={() => { if (prdText.trim()) { setPrdOpen(false); generate(prdText, true) } }}>
-                解析并生成
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
