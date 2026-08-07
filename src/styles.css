@@ -387,6 +387,7 @@ button { font-family: inherit; cursor: pointer; }
 .step-tabs { display: flex; border: 1px solid #dfe2e8; border-radius: 8px; overflow: hidden; }
 .step-tabs button { border: 0; background: #fff; padding: 6px 14px; font-size: 13px; color: #4b5563; }
 .step-tabs button.on { background: #eef0fe; color: #4f46e5; font-weight: 600; }
+.step-tabs button:disabled { color: #b6bcc8; cursor: not-allowed; }
 
 /* ---------- 生图页面渲染基础样式（来自 FlowCraft 迷你设计系统） ---------- */
 .pg { --p: #3d5afe; --pg-bg: #f5f7fa; --card: #fff; --t1: #1b2430; --t2: #7a8398; height: 100%; display: flex; flex-direction: column; background: var(--pg-bg); color: var(--t1); font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }

@@ -14,6 +14,8 @@ export default function App() {
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
   // 两步流程：第一步一句话生流程，第二步可视化体验链路
   const [step, setStep] = useState<'flow' | 'canvas'>(project === demoProject ? 'flow' : 'canvas')
+  // 尚未生成过链路时，第二步入口不可用（先流程生成，再可视化链路）
+  const [hasLink, setHasLink] = useState(project !== demoProject)
   const [pipe, setPipe] = useState<{ done: number; total: number; label: string } | null>(null)
   const [projVersion, setProjVersion] = useState(0)
 
@@ -28,6 +30,7 @@ export default function App() {
       setOpenEdgeId(null)
       setHoverModuleId(null)
       setProjVersion((v) => v + 1)
+      setHasLink(true)
       setStep('canvas')
     } finally {
       setPipe(null)
@@ -41,6 +44,7 @@ export default function App() {
     setOpenEdgeId(null)
     setHoverModuleId(null)
     setProjVersion((v) => v + 1)
+    setHasLink(true)
     setStep('canvas')
   }, [])
   const rfRef = useRef<ReactFlowInstance | null>(null)
@@ -159,7 +163,12 @@ export default function App() {
         <span className="title">可视化体验链路</span>
         <div className="step-tabs">
           <button className={step === 'flow' ? 'on' : ''} onClick={() => setStep('flow')}>① 流程生成</button>
-          <button className={step === 'canvas' ? 'on' : ''} onClick={() => setStep('canvas')}>② 可视化链路</button>
+          <button
+            className={step === 'canvas' ? 'on' : ''}
+            disabled={!hasLink}
+            title={hasLink ? undefined : '先在第一步生成流程，生成链路后自动进入'}
+            onClick={() => setStep('canvas')}
+          >② 可视化链路</button>
         </div>
         {step === 'canvas' && <span className="subtitle">{project.project.name}</span>}
         <span className="topbar-hint">
