@@ -72,36 +72,54 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
   const [seq, setSeq] = useState(1)
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const focusTimerRef = useRef<number | null>(null)
 
   const selected = rfNodes.find((n) => n.selected)
   const selNode = selected ? ((selected.data as { node: FlowNodeT }).node ?? null) : null
 
   /** 与可视化链路的页面聚焦保持一致：为右侧详情面板留位后，将节点推近到剩余画布中央。 */
-  const zoomToNode = useCallback((nodeId: string) => {
+  const zoomToNode = useCallback((nodeId: string): boolean => {
     const rf = rfRef.current
     const canvas = canvasRef.current
-    if (!rf || !canvas) return
+    if (!rf || !canvas) return false
     const inode = rf.getInternalNode(nodeId)
-    if (!inode) return
+    if (!inode) return false
+    const nodeW = inode.measured.width
+    const nodeH = inode.measured.height
+    // 新增节点进入 store 后还需要一次 DOM 测量；尺寸未就绪时先等待，避免按估算尺寸定位后再修正。
+    if (!nodeW || !nodeH) return false
     const abs = inode.internals.positionAbsolute
-    const nodeW = inode.measured.width ?? 232
-    const nodeH = inode.measured.height ?? 96
     const availW = Math.max(0, canvas.clientWidth - FLOW_PANEL_W)
     const availH = canvas.clientHeight
     const zoom = Math.min(1.6, Math.max(0.5, (availH * 0.82) / Math.max(nodeH, 96)))
     const cx = abs.x + nodeW / 2
     const cy = abs.y + nodeH / 2
-    rf.setViewport(
+    void rf.setViewport(
       { x: availW / 2 - cx * zoom, y: availH / 2 - cy * zoom, zoom },
       { duration: 480 },
     )
+    return true
   }, [])
 
   const focusNode = useCallback((nodeId: string) => {
-    // 等详情面板和节点数据提交后推近；补一次避免首次选择时节点测量尚未完成。
-    window.setTimeout(() => zoomToNode(nodeId), 60)
-    window.setTimeout(() => zoomToNode(nodeId), 320)
+    if (focusTimerRef.current !== null) window.clearTimeout(focusTimerRef.current)
+    let attempts = 0
+    const tryFocus = () => {
+      // 只在节点进入 React Flow store 后执行一次动画；未就绪时仅重试查找，不重复移动视口。
+      if (zoomToNode(nodeId)) {
+        focusTimerRef.current = null
+        return
+      }
+      attempts += 1
+      if (attempts < 6) focusTimerRef.current = window.setTimeout(tryFocus, 50)
+      else focusTimerRef.current = null
+    }
+    focusTimerRef.current = window.setTimeout(tryFocus, 0)
   }, [zoomToNode])
+
+  useEffect(() => () => {
+    if (focusTimerRef.current !== null) window.clearTimeout(focusTimerRef.current)
+  }, [])
 
   /** 更新某节点的业务数据（名称/简介/状态）；用函数式更新避免连续操作读到陈旧数据 */
   const patchNode = useCallback((id: string, patch: Partial<FlowNodeT> | ((cur: FlowNodeT) => Partial<FlowNodeT>)) => {
@@ -173,8 +191,9 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
         { id, type: 'flowGen', position: { x: maxX + 280, y: 40 }, data: { node }, selected: true },
       ])
       onFlowChange?.()
+      focusNode(id)
     },
-    [rfNodes, seq, onFlowChange],
+    [rfNodes, seq, onFlowChange, focusNode],
   )
 
   const deleteNode = useCallback((id: string) => {

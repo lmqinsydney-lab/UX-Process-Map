@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useReactFlow, useStoreApi } from '@xyflow/react'
 
 /**
@@ -8,6 +8,7 @@ import { useReactFlow, useStoreApi } from '@xyflow/react'
 export default function MeasureFallback({ dep, refit = false }: { dep?: unknown; refit?: boolean }) {
   const storeApi = useStoreApi()
   const rf = useReactFlow()
+  const didRefit = useRef(false)
   useEffect(() => {
     const t = window.setTimeout(() => {
       const s = storeApi.getState() as unknown as {
@@ -26,7 +27,11 @@ export default function MeasureFallback({ dep, refit = false }: { dep?: unknown;
       })
       if (updates.size) {
         s.updateNodeInternals(updates)
-        if (refit) window.requestAnimationFrame(() => rf.fitView({ padding: 0.18 }))
+        // 首次测量完成时补一次全图适配；后续新增节点只补测量，避免与节点聚焦动画竞争造成抖动。
+        if (refit && !didRefit.current) {
+          didRefit.current = true
+          window.requestAnimationFrame(() => rf.fitView({ padding: 0.18 }))
+        }
       }
     }, 150)
     return () => window.clearTimeout(t)
