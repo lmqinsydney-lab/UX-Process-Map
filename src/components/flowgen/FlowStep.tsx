@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Background,
   Controls,
@@ -13,6 +13,7 @@ import {
   type Node,
   type NodeChange,
   type NodeProps,
+  type ReactFlowInstance,
 } from '@xyflow/react'
 import { layoutFlow } from '../../flowgen/templates'
 import MeasureFallback from '../MeasureFallback'
@@ -20,6 +21,8 @@ import type { Flow, FlowNodeT } from '../../flowgen/compile'
 
 const TYPE_NAME: Record<string, string> = { start: '入口', page: '页面', branch: '判断', modal: '弹窗', end: '结束' }
 const TYPE_COLOR: Record<string, string> = { start: '#16a34a', page: '#4f46e5', branch: '#f59e0b', modal: '#db2777', end: '#6b7280' }
+/** 右侧详情面板宽 300px，另含 12px 外边距。 */
+const FLOW_PANEL_W = 312
 
 function FlowGenNode(props: NodeProps) {
   const n = (props.data as { node: FlowNodeT }).node
@@ -67,9 +70,38 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
   const [rfNodes, setRfNodes] = useState<Node[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
   const [seq, setSeq] = useState(1)
+  const rfRef = useRef<ReactFlowInstance | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
 
   const selected = rfNodes.find((n) => n.selected)
   const selNode = selected ? ((selected.data as { node: FlowNodeT }).node ?? null) : null
+
+  /** 与可视化链路的页面聚焦保持一致：为右侧详情面板留位后，将节点推近到剩余画布中央。 */
+  const zoomToNode = useCallback((nodeId: string) => {
+    const rf = rfRef.current
+    const canvas = canvasRef.current
+    if (!rf || !canvas) return
+    const inode = rf.getInternalNode(nodeId)
+    if (!inode) return
+    const abs = inode.internals.positionAbsolute
+    const nodeW = inode.measured.width ?? 232
+    const nodeH = inode.measured.height ?? 96
+    const availW = Math.max(0, canvas.clientWidth - FLOW_PANEL_W)
+    const availH = canvas.clientHeight
+    const zoom = Math.min(1.6, Math.max(0.5, (availH * 0.82) / Math.max(nodeH, 96)))
+    const cx = abs.x + nodeW / 2
+    const cy = abs.y + nodeH / 2
+    rf.setViewport(
+      { x: availW / 2 - cx * zoom, y: availH / 2 - cy * zoom, zoom },
+      { duration: 480 },
+    )
+  }, [])
+
+  const focusNode = useCallback((nodeId: string) => {
+    // 等详情面板和节点数据提交后推近；补一次避免首次选择时节点测量尚未完成。
+    window.setTimeout(() => zoomToNode(nodeId), 60)
+    window.setTimeout(() => zoomToNode(nodeId), 320)
+  }, [zoomToNode])
 
   /** 更新某节点的业务数据（名称/简介/状态）；用函数式更新避免连续操作读到陈旧数据 */
   const patchNode = useCallback((id: string, patch: Partial<FlowNodeT> | ((cur: FlowNodeT) => Partial<FlowNodeT>)) => {
@@ -191,7 +223,7 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
         )}
         <span className="fg-spacer" />
       </div>
-      <div className="fg-canvas">
+      <div className="fg-canvas" ref={canvasRef}>
         {!rfNodes.length && (
           <div className="fg-empty">
             <div className="fg-empty-title">还没有流程</div>
@@ -211,6 +243,10 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onConnect={onConnect}
+            onInit={(instance) => {
+              rfRef.current = instance
+            }}
+            onNodeClick={(_, node) => focusNode(node.id)}
             fitView
             fitViewOptions={{ padding: 0.18 }}
             minZoom={0.2}
@@ -277,12 +313,14 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
                   ))}
                   <button
                     className="fg-chip"
-                    onClick={() =>
+                    onClick={() => {
                       patchNode(selNode.id, (cur) => {
                         const list = cur.states ?? [{ id: 'default', name: '默认' }]
                         return { states: [...list, { id: `s${Date.now() % 1000000}-${list.length}`, name: `状态 ${list.length + 1}` }] }
                       })
-                    }
+                      // 用户可能已手动平移到别处；新增状态后重新回到当前节点。
+                      focusNode(selNode.id)
+                    }}
                   >
                     ＋ 添加状态
                   </button>
