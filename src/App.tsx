@@ -16,7 +16,7 @@ export default function App() {
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
-  // 需求输入（gen）→ PRD 编辑（prd）→ 流程编辑（flow）⇄ 可视化链路（canvas）
+  // 需求输入（gen）→ PRD 生成（prd）→ 流程生成（flow）⇄ 可视化链路（canvas）
   // 无论本地是否已有链路，刷新或重新进入都从一句话/PRD 输入页开始。
   const [step, setStep] = useState<'gen' | 'prd' | 'flow' | 'canvas'>('gen')
   // 尚未生成过链路时，「可视化链路」tab 不可用（先流程生成，再可视化链路）
@@ -198,7 +198,7 @@ export default function App() {
               className={step === 'prd' ? 'on' : ''}
               disabled={!prdDraft}
               onClick={() => setStep('prd')}
-            >① PRD 编辑</button>
+            >① PRD 生成</button>
             <button
               className={step === 'flow' ? 'on' : ''}
               disabled={!!prdDraft && !genFlow}
@@ -212,65 +212,72 @@ export default function App() {
             >③ 可视化链路</button>
           </div>
         )}
-        {step === 'canvas' && <span className="subtitle">{project.project.name}</span>}
         <span className="topbar-hint">
           {step === 'gen' && '一句话或已有 PRD → 创建可编辑的 PRD 初稿'}
-          {step === 'prd' && '编辑并确认 PRD → 自动解析为流程图'}
+          {step === 'prd' && '生成并确认 PRD → 自动解析为流程图'}
           {step === 'flow' && '编辑节点与状态 → 点「生成可视化链路」进入链路 1.0'}
           {step === 'canvas' && '点击页面卡片聚焦 · 点击「n 个状态」角标展开 · 点击连线看事件与条件'}
         </span>
-        {step === 'canvas' && (
-          <button className="fg-chip" onClick={loadDemoProject}>示例项目</button>
-        )}
         <span className="ver">Demo</span>
       </header>
-      <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)} style={{ display: step !== 'canvas' ? 'none' : undefined }}>
-        <ReactFlowProvider key={projVersion}>
-          <CanvasOverview
-            expanded={expanded}
-            openEdgeId={openEdgeId}
-            focus={focus}
-            hoverModuleId={hoverModuleId}
-            onOpenPage={onOpenPage}
-            onToggleExpand={onToggleExpand}
-            onOpenEdge={setOpenEdgeId}
-            onJumpEdge={(edgeId) => {
-              const e = project.edges.find((x) => x.id === edgeId)
-              if (e) focusPage(e.to.pageId, undefined, e.to.stateId)
-            }}
-            onPickState={(pageId, stateId) => focusPage(pageId, undefined, stateId)}
-            onSelectModule={onSelectModule}
-            onInit={(inst) => {
-              rfRef.current = inst
-              ;(window as unknown as { __rf?: ReactFlowInstance }).__rf = inst
-            }}
-          />
-        </ReactFlowProvider>
-        {focus && (
-          <FocusPanel
-            focus={focus}
-            onClose={closeFocus}
-            onGoPage={(pageId, moduleId) => focusPage(pageId, moduleId)}
-            onState={(stateId) => {
-              setFocus((f) => {
-                if (!f) return f
-                // 切换页面状态后，若选中模块在新状态下不展示，自动取消选中（对应面板卡片置灰）
-                const keep =
-                  !!f.moduleId &&
-                  getPage(f.pageId).moduleInstances.some((i) => i.moduleId === f.moduleId && i.hotzones[stateId])
-                return { ...f, stateId, moduleId: keep ? f.moduleId : null }
-              })
-              // 切换状态同样拉回聚焦页面视图（用户可能已手动平移离开）
-              if (focusRef.current) {
-                const pageId = focusRef.current.pageId
-                window.setTimeout(() => zoomToPage(pageId), 60)
-              }
-            }}
-            onSelectModule={onSelectModule}
-            onHoverModule={setHoverModuleId}
-          />
-        )}
-      </main>
+      <div className="canvas-stage" style={{ display: step !== 'canvas' ? 'none' : undefined }}>
+        <div className="stage-toolbar">
+          <button className="stage-back" onClick={() => setStep(genFlow ? 'flow' : prdDraft ? 'prd' : 'gen')}>← 返回流程生成</button>
+          <div className="stage-heading">
+            <strong>可视化链路</strong>
+            <span>{project.project.name}</span>
+          </div>
+          <span className="fg-spacer" />
+          <button className="stage-secondary" onClick={loadDemoProject}>加载示例项目</button>
+        </div>
+        <main className="canvas-wrap" ref={(el) => (wrapRef.current = el)}>
+          <ReactFlowProvider key={projVersion}>
+            <CanvasOverview
+              expanded={expanded}
+              openEdgeId={openEdgeId}
+              focus={focus}
+              hoverModuleId={hoverModuleId}
+              onOpenPage={onOpenPage}
+              onToggleExpand={onToggleExpand}
+              onOpenEdge={setOpenEdgeId}
+              onJumpEdge={(edgeId) => {
+                const e = project.edges.find((x) => x.id === edgeId)
+                if (e) focusPage(e.to.pageId, undefined, e.to.stateId)
+              }}
+              onPickState={(pageId, stateId) => focusPage(pageId, undefined, stateId)}
+              onSelectModule={onSelectModule}
+              onInit={(inst) => {
+                rfRef.current = inst
+                ;(window as unknown as { __rf?: ReactFlowInstance }).__rf = inst
+              }}
+            />
+          </ReactFlowProvider>
+          {focus && (
+            <FocusPanel
+              focus={focus}
+              onClose={closeFocus}
+              onGoPage={(pageId, moduleId) => focusPage(pageId, moduleId)}
+              onState={(stateId) => {
+                setFocus((f) => {
+                  if (!f) return f
+                  // 切换页面状态后，若选中模块在新状态下不展示，自动取消选中（对应面板卡片置灰）
+                  const keep =
+                    !!f.moduleId &&
+                    getPage(f.pageId).moduleInstances.some((i) => i.moduleId === f.moduleId && i.hotzones[stateId])
+                  return { ...f, stateId, moduleId: keep ? f.moduleId : null }
+                })
+                // 切换状态同样拉回聚焦页面视图（用户可能已手动平移离开）
+                if (focusRef.current) {
+                  const pageId = focusRef.current.pageId
+                  window.setTimeout(() => zoomToPage(pageId), 60)
+                }
+              }}
+              onSelectModule={onSelectModule}
+              onHoverModule={setHoverModuleId}
+            />
+          )}
+        </main>
+      </div>
       <div style={{ display: step === 'gen' ? 'contents' : 'none' }}>
         <GenStep onPrdReady={onPrdReady} />
       </div>
@@ -292,7 +299,7 @@ export default function App() {
           busy={!!pipe}
           onFlowChange={() => setHasLink(false)}
           onBackToGen={() => setStep(prdDraft ? 'prd' : 'gen')}
-          backLabel={prdDraft ? '← 编辑 PRD' : '← 重新输入'}
+          backLabel={prdDraft ? '← 返回 PRD 生成' : '← 返回需求输入'}
         />
       </div>
       {pipe && (

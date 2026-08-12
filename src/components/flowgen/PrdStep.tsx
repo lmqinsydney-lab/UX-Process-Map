@@ -67,15 +67,15 @@ export default function PrdStep({ draft, onChange, onBack, onGenerateFlow }: Pro
 
   return (
     <div className="prd-root">
-      <div className="prd-head">
-        <button className="fg-chip" onClick={onBack}>← 返回需求输入</button>
-        <div className="prd-head-copy">
-          <strong>PRD 编辑</strong>
+      <div className="stage-toolbar">
+        <button className="stage-back" onClick={onBack}>← 返回需求输入</button>
+        <div className="stage-heading">
+          <strong>PRD 生成</strong>
           <span>当前为占位初稿，未来将接入 PRD 生成 Skill</span>
         </div>
         <span className="fg-spacer" />
         <span className="prd-saved">已保存到当前会话 · {wordCount} 字</span>
-        <button className="fg-gen prd-generate" disabled={!!genStep} onClick={generateFlow}>
+        <button className="stage-primary" disabled={!!genStep} onClick={generateFlow}>
           {genStep ? '生成中…' : '确认并生成流程'}
         </button>
       </div>

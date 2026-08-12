@@ -16,18 +16,18 @@
 - 常用: `npx tsc --noEmit`、`npm run build`、`node scripts/validate-data.mjs`（数据校验+模块同一性警告门禁）
 - 惯例：每轮改动 → tsc → 浏览器验证 → commit（中文、Co-Authored-By Claude Fable 5）→ push → deploy
 
-## 3. 当前产品形态（需求输入 + PRD 编辑 + 流程/链路，单 React 应用）
+## 3. 当前产品形态（需求输入 + PRD 生成 + 流程/链路，单 React 应用）
 
 **前置页 · 一句话/已有 PRD 输入**（`src/components/flowgen/GenStep.tsx`，居中 hero 布局，无 step-tabs）：
 - 应用刷新或重新进入时固定落在此页；localStorage 中已有链路仍保留，但不再自动跳到可视化链路
 - 一句话输入 + 模板 chips / 已有 PRD 内联 textarea；不再直接生成流程，而是创建 PRD 草稿后进入编辑
 - 当前没有真实 PRD 生成能力：`src/flowgen/prdDraft.ts#createPlaceholderPrdDraft` 按车险/电商/登录/外卖模板产出结构化占位初稿；这是未来 PRD Skill 的单一替换接口。已有 PRD 则保留原文进入编辑器
 
-**PRD 编辑**（`src/components/flowgen/PrdStep.tsx`，顶部步骤 `① PRD 编辑`）：
+**PRD 生成**（`src/components/flowgen/PrdStep.tsx`，顶部步骤 `① PRD 生成`）：
 - A4 文档式 contentEditable 编辑器，支持正文/一级标题/二级标题、加粗/斜体/下划线/删除线、无序/有序列表、左右对齐、清除格式、撤销/重做；显示当前会话保存状态与字数
-- 「确认并生成流程」后用 PRD 正文调用现有 `parsePrd` mock 解析并布局，装入 genFlow/flowVersion，进入 `② 流程生成`；返回 PRD 编辑时保留内容。新建 PRD 后流程/链路先锁定，避免跳回旧结果
+- 「确认并生成流程」后用 PRD 正文调用现有 `parsePrd` mock 解析并布局，装入 genFlow/flowVersion，进入 `② 流程生成`；返回 PRD 生成时保留内容。新建 PRD 后流程/链路先锁定，避免跳回旧结果
 
-**流程编辑**（`src/components/flowgen/FlowStep.tsx`，顶部步骤 `② 流程生成`，常驻挂载保留现场；有 PRD 时工具栏「← 编辑 PRD」返回文档，无流程时空态含引导按钮）：
+**流程生成**（`src/components/flowgen/FlowStep.tsx`，顶部步骤 `② 流程生成`，常驻挂载保留现场；有 PRD 时工具栏「← 返回 PRD 生成」返回文档，无流程时空态含引导按钮）：
 - 节点可编辑：hover/选中态、拖拽、增删节点（页面/判断）、拖桩连线、右侧详情面板（名称/简介/删除）、**节点多状态增删改**（面板状态列表，节点显示"n 个状态"角标）
 - 节点聚焦与链路页页面聚焦保持一致：选中节点或新增页面/判断节点时，画布为右侧面板留位并将节点居中放大；手动移开视口后新增页面状态，会自动拉回当前节点。定位等待节点测量完成后只执行一次，避免重复动画/全图 refit 造成抖动
 - 底部居中强 CTA「生成可视化链路」（唯一出口，无逐节点手动生图）
@@ -38,6 +38,9 @@
 **可视化链路**（顶部步骤 `③ 可视化链路`，原有画布，数据源动态化）：
 - `src/data/loader.ts`：`export let project`（ESM live binding）+ setProject(localStorage 'uxpm.project' 持久化)+ demoProject（月付分期还款示例，顶栏「示例项目」按钮加载）；App 用 projVersion key 重建画布
 - 判断节点：菱形小卡（decisionNode），点击弹分支规则气泡；不可聚焦；schema `decisions[] + seq` 与页面混排
+- 页面详情「编辑」进入同宽右侧面板的生图模式：参考 `docs/reference/flowcraft-demo.html` 的节点抽屉，保留生成配置（框架/端类型/设计系统/页面类型）、对话、快捷指令、typing、随时退出；不移植参考文件的图片预览列。当前为明确标注的占位能力（参考文件本身也只用 `buildSpec/renderPage` 前端拼组件，无模型 API/fetch），提交不会修改页面截图。生成提示词与配置写入 localStorage `uxpm.image-generation-history`，通过「生成记录」按时间线倒序查看
+
+**统一环节工具栏**：PRD 生成、流程生成、可视化链路均有固定 56px 的首行工具栏；左侧返回、中间环节名与说明、右侧下一环节紫色主操作。首页需求输入是例外，不显示工具栏；一句话/PRD tab、输入区和下一步按钮聚合在页面中心。PRD 的文字格式工具保留为第二行；流程的增删节点操作归入首行；可视化链路无下一环节，仅保留加载示例的次级操作。
 
 ## 4. 数据模型（src/types/model.ts + src/data/project.json）
 

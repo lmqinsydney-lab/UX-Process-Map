@@ -10,11 +10,11 @@ const CHIPS = [
 ]
 
 interface Props {
-  /** 需求输入完成后先进入 PRD 编辑，不直接生成流程。 */
+  /** 需求输入完成后先进入 PRD 生成，不直接生成流程。 */
   onPrdReady: (draft: PrdDraft) => void
 }
 
-/** 前置独立页：一句话 / 已有 PRD → PRD 编辑 */
+/** 前置独立页：一句话 / 已有 PRD → PRD 生成 */
 export default function GenStep({ onPrdReady }: Props) {
   const [prompt, setPrompt] = useState('')
   const [prdMode, setPrdMode] = useState(false)
@@ -37,6 +37,11 @@ export default function GenStep({ onPrdReady }: Props) {
     [genStep, onPrdReady],
   )
 
+  const submitDraft = useCallback(() => {
+    const text = prdMode ? prdText : prompt
+    if (text.trim()) void createDraft(text, prdMode)
+  }, [createDraft, prdMode, prdText, prompt])
+
   return (
     <div className="gen-root">
       <div className="gen-hero">
@@ -44,10 +49,11 @@ export default function GenStep({ onPrdReady }: Props) {
         <div className="gen-sub">
           输入一句话或导入已有 PRD，先完善产品需求文档，再从 PRD 生成可编辑流程图与可视化体验链路
         </div>
-        <div className="fg-seg gen-seg">
-          <button className={!prdMode ? 'on' : ''} onClick={() => setPrdMode(false)}>一句话</button>
-          <button className={prdMode ? 'on' : ''} onClick={() => setPrdMode(true)}>PRD 文档</button>
-        </div>
+        <div className="gen-composer">
+          <div className="fg-seg gen-seg">
+            <button className={!prdMode ? 'on' : ''} onClick={() => setPrdMode(false)}>一句话</button>
+            <button className={prdMode ? 'on' : ''} onClick={() => setPrdMode(true)}>PRD 文档</button>
+          </div>
         {!prdMode ? (
           <>
             <div className="gen-row">
@@ -56,16 +62,16 @@ export default function GenStep({ onPrdReady }: Props) {
                 value={prompt}
                 placeholder="一句话描述产品或流程，如：做一个车险投保流程"
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && prompt.trim() && createDraft(prompt, false)}
+                onKeyDown={(e) => e.key === 'Enter' && prompt.trim() && submitDraft()}
               />
-              <button className="fg-gen" disabled={!!genStep} onClick={() => prompt.trim() && createDraft(prompt, false)}>
+              <button className="stage-primary gen-submit" disabled={!!genStep || !prompt.trim()} onClick={submitDraft}>
                 {genStep ? '准备中…' : '生成 PRD 初稿'}
               </button>
             </div>
             <div className="gen-chips">
               <span>试试：</span>
               {CHIPS.map((c) => (
-                <button key={c.label} className="fg-chip" disabled={!!genStep} onClick={() => { setPrompt(c.p); createDraft(c.p, false) }}>
+                <button key={c.label} className="fg-chip" disabled={!!genStep} onClick={() => setPrompt(c.p)}>
                   {c.label}
                 </button>
               ))}
@@ -79,15 +85,16 @@ export default function GenStep({ onPrdReady }: Props) {
               placeholder="粘贴已有 PRD 内容，进入编辑器继续完善"
               onChange={(e) => setPrdText(e.target.value)}
             />
-            <div className="gen-row">
+            <div className="gen-row gen-prd-actions">
               <button className="fg-chip" onClick={() => setPrdText(SAMPLE_PRD)}>填入示例 PRD</button>
               <span className="fg-spacer" />
-              <button className="fg-gen" disabled={!!genStep} onClick={() => prdText.trim() && createDraft(prdText, true)}>
-                {genStep ? '准备中…' : '进入 PRD 编辑'}
+              <button className="stage-primary gen-submit" disabled={!!genStep || !prdText.trim()} onClick={submitDraft}>
+                {genStep ? '准备中…' : '进入 PRD 生成'}
               </button>
             </div>
           </>
         )}
+        </div>
         {genStep && <div className="gen-status">{genStep}</div>}
       </div>
     </div>

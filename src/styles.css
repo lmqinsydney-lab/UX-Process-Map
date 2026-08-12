@@ -22,7 +22,29 @@ button { font-family: inherit; cursor: pointer; }
 .topbar-hint { margin-left: auto; font-size: 12px; color: #9ca3af; }
 .ver { font-size: 12px; color: #c0c4cc; }
 
+.canvas-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .canvas-wrap { flex: 1; position: relative; min-height: 0; }
+
+/* ---------- 各环节统一工具栏 ---------- */
+.stage-toolbar {
+  height: 56px; min-height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 12px;
+  background: #fff; border-bottom: 1px solid #e1e4e9; flex-shrink: 0; position: relative; z-index: 35;
+}
+.stage-heading { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stage-heading strong { font-size: 14px; color: #1f2329; white-space: nowrap; }
+.stage-heading span { font-size: 11px; color: #9299a6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 380px; }
+.stage-back, .stage-secondary {
+  height: 34px; padding: 0 13px; border: 1px solid #dfe2e8; border-radius: 8px; background: #fff;
+  color: #4b5563; font-size: 12px; white-space: nowrap;
+}
+.stage-back:hover:not(:disabled), .stage-secondary:hover { border-color: #4f46e5; color: #4f46e5; background: #fafaff; }
+.stage-back:disabled { color: #bcc1cb; background: #f7f8fa; cursor: default; }
+.stage-primary {
+  height: 36px; padding: 0 18px; border: 0; border-radius: 8px; background: #4f46e5; color: #fff;
+  font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
+}
+.stage-primary:hover:not(:disabled) { background: #4338ca; }
+.stage-primary:disabled { opacity: 0.48; cursor: default; box-shadow: none; }
 
 /* ---------- 流程节点分组 ---------- */
 .process-group {
@@ -390,16 +412,22 @@ button { font-family: inherit; cursor: pointer; }
 .step-tabs button:disabled { color: #b6bcc8; cursor: not-allowed; }
 
 /* ---------- 前置生成页（一句话 / PRD → 流程） ---------- */
-.gen-root { flex: 1; display: flex; align-items: center; justify-content: center; background: #f7f8fa; min-height: 0; }
+.gen-root { flex: 1; display: flex; flex-direction: column; background: #f7f8fa; min-height: 0; }
 .gen-hero { width: min(680px, 92%); display: flex; flex-direction: column; align-items: center; gap: 18px; margin-top: -6vh; }
+.gen-hero { flex: 1; justify-content: center; align-self: center; }
 .gen-title { font-size: 30px; font-weight: 700; color: #1b2430; letter-spacing: 0.5px; }
 .gen-sub { font-size: 14px; color: #7a8398; line-height: 1.8; max-width: 520px; text-align: center; }
 .gen-row { display: flex; gap: 10px; width: 100%; align-items: center; }
 .gen-input { flex: 1; height: 44px; font-size: 14px; max-width: none; }
+.gen-composer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.gen-submit { height: 44px; min-width: 126px; }
+.gen-prd-row { width: 100%; display: flex; gap: 10px; align-items: flex-start; }
+.gen-prd-row .gen-submit { margin-top: 0; }
+.gen-prd-actions { justify-content: flex-end; }
 .fg-empty .fg-gen { pointer-events: auto; margin-top: 8px; }
 .gen-hero .fg-gen { height: 44px; padding: 0 24px; font-size: 14px; }
 .gen-prd {
-  width: 100%; height: 240px; resize: vertical; border: 1px solid #dfe2e8; border-radius: 10px;
+  flex: 1; width: 100%; height: 240px; resize: vertical; border: 1px solid #dfe2e8; border-radius: 10px;
   padding: 12px 14px; font-size: 13px; line-height: 1.7; outline: none; background: #fff;
 }
 .gen-prd:focus { border-color: #4f46e5; }
@@ -408,15 +436,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- PRD 编辑（占位初稿 / 未来接 PRD Skill） ---------- */
 .prd-root { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #eef0f4; position: relative; }
-.prd-head {
-  min-height: 56px; padding: 9px 16px; display: flex; align-items: center; gap: 12px;
-  background: #fff; border-bottom: 1px solid #e1e4e9; flex-shrink: 0;
-}
-.prd-head-copy { display: flex; flex-direction: column; gap: 2px; }
-.prd-head-copy strong { font-size: 14px; color: #1f2329; }
-.prd-head-copy span { font-size: 11px; color: #9ca3af; }
 .prd-saved { font-size: 11px; color: #8b93a1; white-space: nowrap; }
-.prd-generate { height: 36px; }
 .prd-toolbar {
   min-height: 44px; padding: 6px 16px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
   background: #fafbfc; border-bottom: 1px solid #dfe2e8; box-shadow: 0 2px 6px rgba(31, 35, 41, 0.04); z-index: 2;
@@ -451,11 +471,13 @@ button { font-family: inherit; cursor: pointer; }
 .prd-generating span { padding: 13px 22px; border-radius: 10px; background: #fff; color: #4f46e5; font-size: 13px; box-shadow: 0 8px 28px rgba(31, 35, 41, 0.12); }
 
 @media (max-width: 720px) {
-  .prd-head-copy span, .prd-saved { display: none; }
-  .prd-head { gap: 7px; }
+  .stage-heading span, .prd-saved { display: none; }
+  .stage-toolbar { gap: 7px; padding: 0 8px; }
   .prd-toolbar { padding: 6px 8px; }
   .prd-workspace { padding: 14px 10px; }
   .prd-paper { min-height: 900px; padding: 36px 28px 60px; }
+  .gen-row, .gen-prd-row { flex-direction: column; align-items: stretch; }
+  .gen-submit { width: 100%; }
 }
 
 .fg-flow-name { font-size: 13px; font-weight: 600; color: #1b2430; }

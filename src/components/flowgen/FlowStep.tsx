@@ -232,9 +232,12 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
 
   return (
     <div className="fg-root">
-      <div className="fg-toolbar">
-        <button className="fg-chip" onClick={onBackToGen}>{backLabel}</button>
-        {flowName && <span className="fg-flow-name">{flowName}</span>}
+      <div className="stage-toolbar">
+        <button className="stage-back" onClick={onBackToGen}>{backLabel}</button>
+        <div className="stage-heading">
+          <strong>流程生成</strong>
+          {flowName && <span>{flowName}</span>}
+        </div>
         {rfNodes.length > 0 && (
           <div className="fg-chips">
             <button className="fg-chip" onClick={() => addNode('page')}>＋ 页面节点</button>
@@ -242,6 +245,9 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
           </div>
         )}
         <span className="fg-spacer" />
+        <button className="stage-primary" disabled={busy || !rfNodes.length} onClick={() => onNext(buildFlow())}>
+          {busy ? '生成中…' : '生成可视化链路'}
+        </button>
       </div>
       <div className="fg-canvas" ref={canvasRef}>
         {!rfNodes.length && (
@@ -250,11 +256,6 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
             <div className="fg-empty-sub">先在前置页输入一句话或粘贴 PRD 生成流程图，节点可拖拽、增删、编辑与配置状态</div>
             <button className="fg-gen" onClick={onBackToGen}>去生成流程</button>
           </div>
-        )}
-        {rfNodes.length > 0 && (
-          <button className="fg-next-float" disabled={busy} onClick={() => onNext(buildFlow())}>
-            <span className="fg-next-main">生成可视化链路</span>
-          </button>
         )}
         <ReactFlowProvider>
           <ReactFlow
