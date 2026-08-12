@@ -19,6 +19,7 @@
 ## 3. 当前产品形态（需求输入 + PRD 编辑 + 流程/链路，单 React 应用）
 
 **前置页 · 一句话/已有 PRD 输入**（`src/components/flowgen/GenStep.tsx`，居中 hero 布局，无 step-tabs）：
+- 应用刷新或重新进入时固定落在此页；localStorage 中已有链路仍保留，但不再自动跳到可视化链路
 - 一句话输入 + 模板 chips / 已有 PRD 内联 textarea；不再直接生成流程，而是创建 PRD 草稿后进入编辑
 - 当前没有真实 PRD 生成能力：`src/flowgen/prdDraft.ts#createPlaceholderPrdDraft` 按车险/电商/登录/外卖模板产出结构化占位初稿；这是未来 PRD Skill 的单一替换接口。已有 PRD 则保留原文进入编辑器
 

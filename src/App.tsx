@@ -17,7 +17,8 @@ export default function App() {
   const [focus, setFocus] = useState<FocusState | null>(null)
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
   // 需求输入（gen）→ PRD 编辑（prd）→ 流程编辑（flow）⇄ 可视化链路（canvas）
-  const [step, setStep] = useState<'gen' | 'prd' | 'flow' | 'canvas'>(project === demoProject ? 'gen' : 'canvas')
+  // 无论本地是否已有链路，刷新或重新进入都从一句话/PRD 输入页开始。
+  const [step, setStep] = useState<'gen' | 'prd' | 'flow' | 'canvas'>('gen')
   // 尚未生成过链路时，「可视化链路」tab 不可用（先流程生成，再可视化链路）
   const [hasLink, setHasLink] = useState(project !== demoProject)
   // 前置页生成的流程，交给流程编辑页装载；version 递增触发重新装载
