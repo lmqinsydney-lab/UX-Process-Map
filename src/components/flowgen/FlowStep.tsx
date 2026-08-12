@@ -63,9 +63,10 @@ interface Props {
   onFlowChange?: () => void
   /** 返回前置生成页重新输入 */
   onBackToGen: () => void
+  backLabel?: string
 }
 
-export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange, onBackToGen }: Props) {
+export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange, onBackToGen, backLabel = '← 重新输入' }: Props) {
   const [flowName, setFlowName] = useState('')
   const [rfNodes, setRfNodes] = useState<Node[]>([])
   const [rfEdges, setRfEdges] = useState<Edge[]>([])
@@ -232,7 +233,7 @@ export default function FlowStep({ flow, flowVersion, onNext, busy, onFlowChange
   return (
     <div className="fg-root">
       <div className="fg-toolbar">
-        <button className="fg-chip" onClick={onBackToGen}>← 重新输入</button>
+        <button className="fg-chip" onClick={onBackToGen}>{backLabel}</button>
         {flowName && <span className="fg-flow-name">{flowName}</span>}
         {rfNodes.length > 0 && (
           <div className="fg-chips">

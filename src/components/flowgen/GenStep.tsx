@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { GENERIC_TEMPLATE, SAMPLE_PRD, TEMPLATES, layoutFlow, parsePrd } from '../../flowgen/templates'
-import type { Flow, FlowNodeT } from '../../flowgen/compile'
+import { SAMPLE_PRD } from '../../flowgen/templates'
+import { createImportedPrdDraft, createPlaceholderPrdDraft, type PrdDraft } from '../../flowgen/prdDraft'
 
 const CHIPS = [
   { label: '车险投保', p: '做一个车险投保流程' },
@@ -10,47 +10,31 @@ const CHIPS = [
 ]
 
 interface Props {
-  /** 生成完成，交出带布局（depth）的流程 */
-  onGenerated: (flow: Flow) => void
+  /** 需求输入完成后先进入 PRD 编辑，不直接生成流程。 */
+  onPrdReady: (draft: PrdDraft) => void
 }
 
-/** 前置独立页：一句话 / PRD 文档生成流程，完成后进入流程编辑页 */
-export default function GenStep({ onGenerated }: Props) {
+/** 前置独立页：一句话 / 已有 PRD → PRD 编辑 */
+export default function GenStep({ onPrdReady }: Props) {
   const [prompt, setPrompt] = useState('')
   const [prdMode, setPrdMode] = useState(false)
   const [prdText, setPrdText] = useState('')
   const [genStep, setGenStep] = useState<string | null>(null)
 
-  const generate = useCallback(
+  const createDraft = useCallback(
     async (text: string, fromPrd: boolean) => {
       if (genStep) return
       const steps = fromPrd
-        ? ['正在解析 PRD 文档…', '识别页面与流程关键词…', '构建节点关系图…', '自动布局中…']
-        : ['正在理解需求…', '拆解用户旅程与关键场景…', '生成页面节点与分支…', '自动布局中…']
+        ? ['正在读取 PRD 文档…', '整理文档结构…', '准备 PRD 编辑器…']
+        : ['正在整理需求…', '创建 PRD 占位初稿…', '准备 PRD 编辑器…']
       for (const s of steps) {
         setGenStep(s)
-        await new Promise((r) => setTimeout(r, 380))
+        await new Promise((r) => setTimeout(r, 320))
       }
-      let tpl
-      if (fromPrd) {
-        tpl = parsePrd(text)
-      } else {
-        tpl = TEMPLATES.find((t: { match: RegExp }) => t.match.test(text))
-        if (!tpl) {
-          const topic = text.replace(/做一个|帮我做|设计|流程|的|一个|App|app/g, '').trim().slice(0, 6) || '产品'
-          tpl = GENERIC_TEMPLATE(topic)
-        }
-      }
-      const f: Flow = {
-        name: tpl.name,
-        nodes: tpl.nodes.map((n: FlowNodeT) => ({ ...n })),
-        edges: tpl.edges.map((e: { from: string; to: string; label?: string }) => ({ ...e })),
-      }
-      layoutFlow(f)
       setGenStep(null)
-      onGenerated(f)
+      onPrdReady(fromPrd ? createImportedPrdDraft(text) : createPlaceholderPrdDraft(text))
     },
-    [genStep, onGenerated],
+    [genStep, onPrdReady],
   )
 
   return (
@@ -58,7 +42,7 @@ export default function GenStep({ onGenerated }: Props) {
       <div className="gen-hero">
         <div className="gen-title">从一句话到可视化体验链路</div>
         <div className="gen-sub">
-          输入一句话或粘贴 PRD，自动生成页面流程图；下一步可编辑节点与状态，确认后自动生成可视化体验链路
+          输入一句话或导入已有 PRD，先完善产品需求文档，再从 PRD 生成可编辑流程图与可视化体验链路
         </div>
         <div className="fg-seg gen-seg">
           <button className={!prdMode ? 'on' : ''} onClick={() => setPrdMode(false)}>一句话</button>
@@ -72,16 +56,16 @@ export default function GenStep({ onGenerated }: Props) {
                 value={prompt}
                 placeholder="一句话描述产品或流程，如：做一个车险投保流程"
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && prompt.trim() && generate(prompt, false)}
+                onKeyDown={(e) => e.key === 'Enter' && prompt.trim() && createDraft(prompt, false)}
               />
-              <button className="fg-gen" disabled={!!genStep} onClick={() => prompt.trim() && generate(prompt, false)}>
-                {genStep ? '生成中…' : '生成流程'}
+              <button className="fg-gen" disabled={!!genStep} onClick={() => prompt.trim() && createDraft(prompt, false)}>
+                {genStep ? '准备中…' : '生成 PRD 初稿'}
               </button>
             </div>
             <div className="gen-chips">
               <span>试试：</span>
               {CHIPS.map((c) => (
-                <button key={c.label} className="fg-chip" disabled={!!genStep} onClick={() => { setPrompt(c.p); generate(c.p, false) }}>
+                <button key={c.label} className="fg-chip" disabled={!!genStep} onClick={() => { setPrompt(c.p); createDraft(c.p, false) }}>
                   {c.label}
                 </button>
               ))}
@@ -92,14 +76,14 @@ export default function GenStep({ onGenerated }: Props) {
             <textarea
               className="gen-prd"
               value={prdText}
-              placeholder="粘贴 PRD 内容，将自动识别页面与流程"
+              placeholder="粘贴已有 PRD 内容，进入编辑器继续完善"
               onChange={(e) => setPrdText(e.target.value)}
             />
             <div className="gen-row">
               <button className="fg-chip" onClick={() => setPrdText(SAMPLE_PRD)}>填入示例 PRD</button>
               <span className="fg-spacer" />
-              <button className="fg-gen" disabled={!!genStep} onClick={() => prdText.trim() && generate(prdText, true)}>
-                {genStep ? '解析中…' : '解析并生成'}
+              <button className="fg-gen" disabled={!!genStep} onClick={() => prdText.trim() && createDraft(prdText, true)}>
+                {genStep ? '准备中…' : '进入 PRD 编辑'}
               </button>
             </div>
           </>

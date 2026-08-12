@@ -4,7 +4,10 @@ import CanvasOverview from './components/CanvasOverview'
 import FocusPanel from './components/focus/FocusPanel'
 import FlowStep from './components/flowgen/FlowStep'
 import GenStep from './components/flowgen/GenStep'
+import PrdStep from './components/flowgen/PrdStep'
 import { compileFlow, type Flow } from './flowgen/compile'
+import { layoutFlow, parsePrd } from './flowgen/templates'
+import type { PrdDraft } from './flowgen/prdDraft'
 import { demoProject, getPage, project, setProject } from './data/loader'
 import { CARD_W, FOCUS_CARD_H, PANEL_W, type FocusState } from './layout'
 
@@ -13,13 +16,14 @@ export default function App() {
   const [openEdgeId, setOpenEdgeId] = useState<string | null>(null)
   const [focus, setFocus] = useState<FocusState | null>(null)
   const [hoverModuleId, setHoverModuleId] = useState<string | null>(null)
-  // 前置生成页（gen）→ 流程编辑（flow）⇄ 可视化链路（canvas）
-  const [step, setStep] = useState<'gen' | 'flow' | 'canvas'>(project === demoProject ? 'gen' : 'canvas')
+  // 需求输入（gen）→ PRD 编辑（prd）→ 流程编辑（flow）⇄ 可视化链路（canvas）
+  const [step, setStep] = useState<'gen' | 'prd' | 'flow' | 'canvas'>(project === demoProject ? 'gen' : 'canvas')
   // 尚未生成过链路时，「可视化链路」tab 不可用（先流程生成，再可视化链路）
   const [hasLink, setHasLink] = useState(project !== demoProject)
   // 前置页生成的流程，交给流程编辑页装载；version 递增触发重新装载
   const [genFlow, setGenFlow] = useState<Flow | null>(null)
   const [flowVersion, setFlowVersion] = useState(0)
+  const [prdDraft, setPrdDraft] = useState<PrdDraft | null>(null)
   const [pipe, setPipe] = useState<{ done: number; total: number; label: string } | null>(null)
   const [projVersion, setProjVersion] = useState(0)
 
@@ -41,7 +45,22 @@ export default function App() {
     }
   }, [pipe])
 
-  const onFlowGenerated = useCallback((flow: Flow) => {
+  const onPrdReady = useCallback((draft: PrdDraft) => {
+    setPrdDraft(draft)
+    setGenFlow(null)
+    setHasLink(false)
+    setStep('prd')
+  }, [])
+
+  const onFlowGenerated = useCallback((draft: PrdDraft, plainText: string) => {
+    const tpl = parsePrd(plainText)
+    const flow: Flow = {
+      name: draft.title.replace(/产品需求文档|需求文档|PRD/gi, '').trim() || tpl.name,
+      nodes: tpl.nodes.map((node: Flow['nodes'][number]) => ({ ...node })),
+      edges: tpl.edges.map((edge: Flow['edges'][number]) => ({ ...edge })),
+    }
+    layoutFlow(flow)
+    setPrdDraft(draft)
     setGenFlow(flow)
     setFlowVersion((v) => v + 1)
     setHasLink(false)
@@ -174,18 +193,28 @@ export default function App() {
         <span className="title">可视化体验链路</span>
         {step !== 'gen' && (
           <div className="step-tabs">
-            <button className={step === 'flow' ? 'on' : ''} onClick={() => setStep('flow')}>① 流程生成</button>
+            <button
+              className={step === 'prd' ? 'on' : ''}
+              disabled={!prdDraft}
+              onClick={() => setStep('prd')}
+            >① PRD 编辑</button>
+            <button
+              className={step === 'flow' ? 'on' : ''}
+              disabled={!!prdDraft && !genFlow}
+              onClick={() => setStep('flow')}
+            >② 流程生成</button>
             <button
               className={step === 'canvas' ? 'on' : ''}
               disabled={!hasLink}
               title={hasLink ? undefined : '先生成流程，生成链路后自动进入'}
               onClick={() => setStep('canvas')}
-            >② 可视化链路</button>
+            >③ 可视化链路</button>
           </div>
         )}
         {step === 'canvas' && <span className="subtitle">{project.project.name}</span>}
         <span className="topbar-hint">
-          {step === 'gen' && '一句话或 PRD 自动生成流程图，生成后进入流程编辑'}
+          {step === 'gen' && '一句话或已有 PRD → 创建可编辑的 PRD 初稿'}
+          {step === 'prd' && '编辑并确认 PRD → 自动解析为流程图'}
           {step === 'flow' && '编辑节点与状态 → 点「生成可视化链路」进入链路 1.0'}
           {step === 'canvas' && '点击页面卡片聚焦 · 点击「n 个状态」角标展开 · 点击连线看事件与条件'}
         </span>
@@ -242,8 +271,18 @@ export default function App() {
         )}
       </main>
       <div style={{ display: step === 'gen' ? 'contents' : 'none' }}>
-        <GenStep onGenerated={onFlowGenerated} />
+        <GenStep onPrdReady={onPrdReady} />
       </div>
+      {prdDraft && (
+        <div style={{ display: step === 'prd' ? 'contents' : 'none' }}>
+          <PrdStep
+            draft={prdDraft}
+            onChange={setPrdDraft}
+            onBack={() => setStep('gen')}
+            onGenerateFlow={onFlowGenerated}
+          />
+        </div>
+      )}
       <div style={{ display: step === 'flow' ? 'contents' : 'none' }}>
         <FlowStep
           flow={genFlow}
@@ -251,7 +290,8 @@ export default function App() {
           onNext={runPipeline}
           busy={!!pipe}
           onFlowChange={() => setHasLink(false)}
-          onBackToGen={() => setStep('gen')}
+          onBackToGen={() => setStep(prdDraft ? 'prd' : 'gen')}
+          backLabel={prdDraft ? '← 编辑 PRD' : '← 重新输入'}
         />
       </div>
       {pipe && (

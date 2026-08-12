@@ -406,6 +406,58 @@ button { font-family: inherit; cursor: pointer; }
 .gen-chips { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #9aa1ad; }
 .gen-status { font-size: 13px; color: #4f46e5; }
 
+/* ---------- PRD 编辑（占位初稿 / 未来接 PRD Skill） ---------- */
+.prd-root { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #eef0f4; position: relative; }
+.prd-head {
+  min-height: 56px; padding: 9px 16px; display: flex; align-items: center; gap: 12px;
+  background: #fff; border-bottom: 1px solid #e1e4e9; flex-shrink: 0;
+}
+.prd-head-copy { display: flex; flex-direction: column; gap: 2px; }
+.prd-head-copy strong { font-size: 14px; color: #1f2329; }
+.prd-head-copy span { font-size: 11px; color: #9ca3af; }
+.prd-saved { font-size: 11px; color: #8b93a1; white-space: nowrap; }
+.prd-generate { height: 36px; }
+.prd-toolbar {
+  min-height: 44px; padding: 6px 16px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  background: #fafbfc; border-bottom: 1px solid #dfe2e8; box-shadow: 0 2px 6px rgba(31, 35, 41, 0.04); z-index: 2;
+}
+.prd-toolbar > i { width: 1px; height: 22px; background: #dfe2e8; margin: 0 5px; }
+.prd-tool {
+  min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px;
+  background: transparent; color: #4b5563; font-size: 12px;
+}
+.prd-tool:hover { background: #eef0fe; border-color: #dcdafe; color: #4f46e5; }
+.prd-tool[aria-label="加粗"] { font-weight: 700; font-size: 14px; }
+.prd-tool[aria-label="斜体"] { font-style: italic; font-family: Georgia, serif; font-size: 14px; }
+.prd-tool[aria-label="下划线"] { text-decoration: underline; font-size: 14px; }
+.prd-tool[aria-label="删除线"] { text-decoration: line-through; font-size: 14px; }
+.prd-workspace { flex: 1; min-height: 0; overflow: auto; padding: 28px max(24px, calc((100% - 860px) / 2)); }
+.prd-paper {
+  width: 100%; max-width: 860px; min-height: 1060px; margin: 0 auto; padding: 62px 76px 90px;
+  background: #fff; border: 1px solid #dfe2e8; box-shadow: 0 5px 22px rgba(31, 35, 41, 0.09);
+  outline: none; color: #252a34; font-size: 14px; line-height: 1.85; caret-color: #4f46e5;
+}
+.prd-paper:focus { border-color: #c8c6f3; box-shadow: 0 6px 28px rgba(79, 70, 229, 0.11); }
+.prd-paper h1 { margin: 0 0 28px; font-size: 28px; line-height: 1.35; color: #171b24; text-align: center; }
+.prd-paper h2 { margin: 28px 0 10px; padding-bottom: 7px; font-size: 18px; line-height: 1.4; color: #222733; border-bottom: 1px solid #eceef2; }
+.prd-paper h3 { margin: 20px 0 8px; font-size: 15px; }
+.prd-paper p { margin: 8px 0; }
+.prd-paper ul, .prd-paper ol { margin: 8px 0; padding-left: 26px; }
+.prd-paper li { margin: 5px 0; }
+.prd-generating {
+  position: absolute; inset: 100px 0 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+  background: rgba(238, 240, 244, 0.78); backdrop-filter: blur(2px);
+}
+.prd-generating span { padding: 13px 22px; border-radius: 10px; background: #fff; color: #4f46e5; font-size: 13px; box-shadow: 0 8px 28px rgba(31, 35, 41, 0.12); }
+
+@media (max-width: 720px) {
+  .prd-head-copy span, .prd-saved { display: none; }
+  .prd-head { gap: 7px; }
+  .prd-toolbar { padding: 6px 8px; }
+  .prd-workspace { padding: 14px 10px; }
+  .prd-paper { min-height: 900px; padding: 36px 28px 60px; }
+}
+
 .fg-flow-name { font-size: 13px; font-weight: 600; color: #1b2430; }
 
 /* ---------- 生图页面渲染基础样式（来自 FlowCraft 迷你设计系统） ---------- */

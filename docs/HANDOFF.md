@@ -16,13 +16,17 @@
 - 常用: `npx tsc --noEmit`、`npm run build`、`node scripts/validate-data.mjs`（数据校验+模块同一性警告门禁）
 - 惯例：每轮改动 → tsc → 浏览器验证 → commit（中文、Co-Authored-By Claude Fable 5）→ push → deploy
 
-## 3. 当前产品形态（前置生成页 + 两步 tab，单 React 应用）
+## 3. 当前产品形态（需求输入 + PRD 编辑 + 流程/链路，单 React 应用）
 
-**前置页 · 一句话/PRD 生成**（`src/components/flowgen/GenStep.tsx`，居中 hero 布局，无 step-tabs）：
-- 一句话输入 + 模板 chips / PRD 内联 textarea（mock：关键词模板 车险/电商/登录/外卖 + PRD 正则，`src/flowgen/templates.ts`，移植自同事 FlowCraft demo，原件归档 `docs/reference/flowcraft-demo.html`）
-- 生成完成 `onGenerated(flow)` → App 装入 genFlow/flowVersion → 跳转流程编辑页
+**前置页 · 一句话/已有 PRD 输入**（`src/components/flowgen/GenStep.tsx`，居中 hero 布局，无 step-tabs）：
+- 一句话输入 + 模板 chips / 已有 PRD 内联 textarea；不再直接生成流程，而是创建 PRD 草稿后进入编辑
+- 当前没有真实 PRD 生成能力：`src/flowgen/prdDraft.ts#createPlaceholderPrdDraft` 按车险/电商/登录/外卖模板产出结构化占位初稿；这是未来 PRD Skill 的单一替换接口。已有 PRD 则保留原文进入编辑器
 
-**第一步 · 流程编辑**（`src/components/flowgen/FlowStep.tsx`，常驻挂载保留现场；工具栏「← 重新输入」可回前置页，无流程时空态含「去生成流程」按钮）：
+**PRD 编辑**（`src/components/flowgen/PrdStep.tsx`，顶部步骤 `① PRD 编辑`）：
+- A4 文档式 contentEditable 编辑器，支持正文/一级标题/二级标题、加粗/斜体/下划线/删除线、无序/有序列表、左右对齐、清除格式、撤销/重做；显示当前会话保存状态与字数
+- 「确认并生成流程」后用 PRD 正文调用现有 `parsePrd` mock 解析并布局，装入 genFlow/flowVersion，进入 `② 流程生成`；返回 PRD 编辑时保留内容。新建 PRD 后流程/链路先锁定，避免跳回旧结果
+
+**流程编辑**（`src/components/flowgen/FlowStep.tsx`，顶部步骤 `② 流程生成`，常驻挂载保留现场；有 PRD 时工具栏「← 编辑 PRD」返回文档，无流程时空态含引导按钮）：
 - 节点可编辑：hover/选中态、拖拽、增删节点（页面/判断）、拖桩连线、右侧详情面板（名称/简介/删除）、**节点多状态增删改**（面板状态列表，节点显示"n 个状态"角标）
 - 节点聚焦与链路页页面聚焦保持一致：选中节点或新增页面/判断节点时，画布为右侧面板留位并将节点居中放大；手动移开视口后新增页面状态，会自动拉回当前节点。定位等待节点测量完成后只执行一次，避免重复动画/全图 refit 造成抖动
 - 底部居中强 CTA「生成可视化链路」（唯一出口，无逐节点手动生图）
@@ -30,7 +34,7 @@
 
 **管线**（`src/flowgen/compile.ts`）：逐节点×逐状态 mock 生图（`src/flowgen/pagegen.ts`，迷你设计系统 buildSpec/renderPageBody，// @ts-nocheck 移植代码）→ 离屏渲染测量 `.comp` 组件包围盒 = **模块热区**（组件清单即模块划分，COMP_MODULE 映射 18 种组件→全局模块）→ 截图（toPng 3.5s 超时自适应降级 foreignObject SVG 快照，`pngUnavailable` 会话级标记）→ 编译 project.json → setProject → 进入第二步。判断节点→decisions；主按钮挂 clickEdgeId=首条主流程出边。
 
-**第二步 · 可视化链路**（原有画布，数据源动态化）：
+**可视化链路**（顶部步骤 `③ 可视化链路`，原有画布，数据源动态化）：
 - `src/data/loader.ts`：`export let project`（ESM live binding）+ setProject(localStorage 'uxpm.project' 持久化)+ demoProject（月付分期还款示例，顶栏「示例项目」按钮加载）；App 用 projVersion key 重建画布
 - 判断节点：菱形小卡（decisionNode），点击弹分支规则气泡；不可聚焦；schema `decisions[] + seq` 与页面混排
 
