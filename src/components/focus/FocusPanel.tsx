@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { getPage, getProcessNode, project } from '../../data/loader'
 import type { FocusState } from '../../layout'
 import DetailPanel from './DetailPanel'
+import ImageGenPanel from './ImageGenPanel'
 
 interface Props {
   focus: FocusState
@@ -17,6 +19,21 @@ export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelect
   const idx = project.pages.findIndex((p) => p.id === focus.pageId)
   const prev = idx > 0 ? project.pages[idx - 1] : null
   const next = idx < project.pages.length - 1 ? project.pages[idx + 1] : null
+  const [mode, setMode] = useState<'detail' | 'generate' | 'history'>('detail')
+
+  useEffect(() => setMode('detail'), [page.id])
+
+  useEffect(() => {
+    if (mode === 'detail') return
+    const exitGeneration = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      setMode('detail')
+    }
+    window.addEventListener('keydown', exitGeneration, true)
+    return () => window.removeEventListener('keydown', exitGeneration, true)
+  }, [mode])
 
   return (
     <aside className="focus-panel">
@@ -37,17 +54,27 @@ export default function FocusPanel({ focus, onClose, onGoPage, onState, onSelect
         </span>
       </div>
       <div className="fp-body">
-        <DetailPanel
-          page={page}
-          stateId={focus.stateId}
-          moduleId={focus.moduleId}
-          onState={onState}
-          onSelectModule={onSelectModule}
-          onHoverModule={onHoverModule}
-          onJump={(pageId, moduleId) => onGoPage(pageId, moduleId)}
-        />
+        {mode === 'detail' ? (
+          <DetailPanel
+            page={page}
+            stateId={focus.stateId}
+            moduleId={focus.moduleId}
+            onState={onState}
+            onSelectModule={onSelectModule}
+            onHoverModule={onHoverModule}
+            onJump={(pageId, moduleId) => onGoPage(pageId, moduleId)}
+            onEditPage={() => setMode('generate')}
+          />
+        ) : (
+          <ImageGenPanel
+            page={page}
+            mode={mode}
+            onMode={setMode}
+            onExit={() => setMode('detail')}
+          />
+        )}
       </div>
-      <div className="fp-foot">Esc 返回 · ← → 翻页 · 双指滑动平移画布</div>
+      <div className="fp-foot">{mode === 'detail' ? 'Esc 返回 · ← → 翻页 · 双指滑动平移画布' : '生图模式 · 页面画布保持可见'}</div>
     </aside>
   )
 }

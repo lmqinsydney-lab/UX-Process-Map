@@ -480,6 +480,84 @@ button { font-family: inherit; cursor: pointer; }
   .gen-submit { width: 100%; }
 }
 
+/* ---------- 页面生图模式（右侧面板，当前为占位能力） ---------- */
+.image-gen-panel { width: 100%; min-height: 0; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
+.ig-mode-head {
+  padding: 16px 18px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  border-bottom: 1px solid #eceef2; flex-shrink: 0;
+}
+.ig-mode-head h2 { font-size: 17px; line-height: 1.35; margin: 3px 0 0; color: #1f2329; }
+.ig-eyebrow { font-size: 11px; color: #4f46e5; font-weight: 600; }
+.ig-head-actions { display: flex; align-items: center; gap: 6px; }
+.ig-history-btn, .ig-exit, .ig-back-link {
+  height: 30px; padding: 0 10px; border: 1px solid #dfe2e8; border-radius: 7px; background: #fff;
+  color: #4b5563; font-size: 11px; white-space: nowrap;
+}
+.ig-history-btn:hover, .ig-exit:hover, .ig-back-link:hover { color: #4f46e5; border-color: #4f46e5; background: #fafaff; }
+.ig-exit { color: #6b7280; }
+.ig-back-link { border: 0; padding: 0; height: auto; color: #4f46e5; }
+.ig-notice {
+  margin: 12px 14px 0; padding: 9px 11px; border-radius: 8px; background: #fff8e8; border: 1px solid #f5dfad;
+  display: flex; flex-direction: column; gap: 3px; flex-shrink: 0;
+}
+.ig-notice strong { color: #a16207; font-size: 11px; }
+.ig-notice span { color: #927443; font-size: 10px; line-height: 1.5; }
+.ig-config {
+  padding: 10px 14px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; flex-shrink: 0;
+}
+.ig-config label { display: flex; flex-direction: column; gap: 3px; }
+.ig-config label > span { color: #949aa6; font-size: 9px; }
+.ig-config select {
+  width: 100%; height: 29px; padding: 0 7px; border: 1px solid #dfe2e8; border-radius: 7px;
+  background: #fff; color: #4b5563; font-size: 10px; outline: none;
+}
+.ig-config select:focus { border-color: #4f46e5; }
+.ig-chat { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.ig-turn { display: flex; flex-direction: column; gap: 7px; }
+.ig-user, .ig-assistant { max-width: 91%; padding: 9px 11px; border-radius: 10px; font-size: 12px; line-height: 1.6; }
+.ig-user { align-self: flex-end; background: #4f46e5; color: #fff; border-bottom-right-radius: 3px; }
+.ig-assistant { align-self: flex-start; background: #f4f5f8; color: #374151; border-bottom-left-radius: 3px; }
+.ig-assistant time { display: block; margin-top: 5px; color: #a0a6b1; font-size: 9px; }
+.ig-assistant small { display: block; margin-top: 6px; padding-top: 5px; border-top: 1px solid #e3e5e9; color: #858c98; font-size: 9px; line-height: 1.5; }
+.ig-compose { padding: 10px 12px 12px; border-top: 1px solid #eceef2; background: #fafbfc; flex-shrink: 0; }
+.ig-suggestions { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 8px; padding-bottom: 1px; }
+.ig-suggestions button {
+  flex-shrink: 0; border: 1px solid #deddf4; border-radius: 999px; background: #fff; color: #5b55a5;
+  font-size: 10px; padding: 4px 8px;
+}
+.ig-compose textarea {
+  width: 100%; resize: none; border: 1px solid #d8dbe2; border-radius: 9px 9px 0 0; padding: 9px 10px;
+  font: inherit; font-size: 12px; line-height: 1.55; outline: none; background: #fff; display: block;
+}
+.ig-compose textarea:focus { border-color: #4f46e5; }
+.ig-compose-foot {
+  min-height: 36px; display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 9px;
+  border: 1px solid #d8dbe2; border-top: 0; border-radius: 0 0 9px 9px; background: #fff;
+}
+.ig-compose-foot span { flex: 1; color: #a0a6b1; font-size: 9px; }
+.ig-compose-foot button {
+  height: 27px; padding: 0 11px; border: 0; border-radius: 6px; background: #4f46e5; color: #fff;
+  font-size: 11px; font-weight: 600;
+}
+.ig-compose-foot button:disabled { opacity: 0.45; cursor: default; }
+.ig-history { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 14px 28px 23px; }
+.ig-record { position: relative; padding: 0 0 18px 20px; border-left: 1px solid #dfe2e8; }
+.ig-record:last-child { border-left-color: transparent; padding-bottom: 0; }
+.ig-record > i {
+  position: absolute; width: 9px; height: 9px; left: -5px; top: 5px; border-radius: 50%;
+  background: #4f46e5; box-shadow: 0 0 0 4px #eeedff;
+}
+.ig-record-card { padding: 11px; border: 1px solid #e4e6eb; border-radius: 9px; background: #fff; }
+.ig-record-meta { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.ig-record-meta strong { font-size: 12px; color: #252a34; }
+.ig-record-meta time { font-size: 9px; color: #a0a6b1; }
+.ig-record-card p { margin: 7px 0; font-size: 11px; color: #4b5563; line-height: 1.55; }
+.ig-record-config { margin: 0 0 7px; color: #858c98; font-size: 9px; line-height: 1.5; }
+.ig-record-card > span { font-size: 9px; color: #d97706; }
+.ig-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #8f96a3; text-align: center; }
+.ig-empty strong { font-size: 13px; color: #6b7280; }
+.ig-empty span { font-size: 10px; line-height: 1.5; }
+
 .fg-flow-name { font-size: 13px; font-weight: 600; color: #1b2430; }
 
 /* ---------- 生图页面渲染基础样式（来自 FlowCraft 迷你设计系统） ---------- */

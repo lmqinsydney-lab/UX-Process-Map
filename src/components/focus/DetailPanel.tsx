@@ -11,6 +11,7 @@ interface Props {
   onSelectModule: (moduleId: string | null) => void
   onHoverModule: (moduleId: string | null) => void
   onJump: (pageId: string, moduleId: string) => void
+  onEditPage: () => void
 }
 
 /** 模块手风琴卡片：收起展示名称+状态标签，展开直接露出模块详情 */
@@ -146,19 +147,16 @@ function ModuleCard({
   )
 }
 
-export default function DetailPanel({ page, stateId, moduleId, onState, onSelectModule, onHoverModule, onJump }: Props) {
-  const [editOpen, setEditOpen] = useState(false)
-
+export default function DetailPanel({ page, stateId, moduleId, onState, onSelectModule, onHoverModule, onJump, onEditPage }: Props) {
   return (
     <aside className="panel">
       <div className="panel-inner" key={page.id}>
         <div className="panel-head">
           <h2>{page.name}</h2>
-          <button className="edit-btn" onClick={() => setEditOpen(!editOpen)} title="对话编辑（Demo 占位）">
+          <button className="edit-btn" onClick={onEditPage} title="进入页面生图模式">
             ✎ 编辑
           </button>
         </div>
-        {editOpen && <ChatEditStub placeholder={`试试：把「${page.name}」的页面说明改成…`} />}
         <section>
           <h3>模块构成</h3>
           <div className="module-cards">
